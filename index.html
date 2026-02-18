@@ -243,18 +243,32 @@
         </main>
     </div>
 
-    <div id="upload-modal" class="modal">
+<div id="upload-modal" class="modal">
         <div class="modal-content">
             <span id="close-modal" class="close-btn">&times;</span>
             <h2 style="margin-top:0; color:white;">ອັບໂຫຼດຂໍ້ມູນ Excel</h2>
+            
             <div class="drop-zone" onclick="document.getElementById('excel-input').click()" style="border: 2px dashed rgba(255,255,255,0.3); padding:30px; text-align:center; cursor:pointer; margin:20px 0; border-radius: 12px;">
                 <p id="file-name-display" style="margin:0; color: #94a3b8;">ກົດເພື່ອເລືອກໄຟລ໌ ຫຼື ລາກໄຟລ໌ມາວາງທີ່ນີ້</p>
             </div>
             <input type="file" id="excel-input" hidden accept=".xlsx, .xls">
+
+            <div class="upload-options" style="display:flex; gap:15px; margin-bottom:15px; justify-content:center;">
+                <label style="color:#cbd5e1; cursor:pointer; display:flex; align-items:center; gap:5px;">
+                    <input type="radio" name="uploadType" value="UPDATE" checked style="width:auto; height:auto;"> 
+                    ອັບເດດຍອດເງິນ (Closing)
+                </label>
+                <label style="color:#fbbf24; cursor:pointer; display:flex; align-items:center; gap:5px;">
+                    <input type="radio" name="uploadType" value="NEW" style="width:auto; height:auto;"> 
+                    ເພີ່ມບັນຊີໃໝ່ (Opening)
+                </label>
+            </div>
+
             <div class="filter-group" style="margin-bottom:20px;">
                 <label style="color:#cbd5e1;">ວັນທີຂໍ້ມູນ:</label>
                 <input type="date" id="upload-date-select" style="width:100%;">
             </div>
+
             <div style="display: flex; gap: 10px;">
                 <button id="start-upload-btn" class="btn-primary-glass" style="flex: 1; justify-content: center;">ຢືນຢັນ</button>
                 <button onclick="deleteDataByDate()" class="btn-danger-glass" style="flex: 1; justify-content: center;">ລົບຂໍ້ມູນ</button>

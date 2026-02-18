@@ -75,7 +75,7 @@ body {
 }
 
 /* ==========================================
-   3. LOGIN SCREEN (UPDATED: FIX OVERLAP)
+   3. LOGIN SCREEN
    ========================================== */
 #login-screen {
     position: fixed; inset: 0; z-index: 9999;
@@ -103,17 +103,16 @@ body {
     color: #64748b; font-size: 0.9rem; letter-spacing: 4px; margin-bottom: 40px; font-weight: 300; text-transform: uppercase;
 }
 
-/* ✅ ແກ້ໄຂ Input: ເພີ່ມຄວາມສູງ ແລະ Padding ບໍ່ໃຫ້ຊ້ອນກັນ */
 .input-group {
     position: relative;
     margin-bottom: 30px;
-    height: 50px; /* ເພີ່ມຄວາມສູງ */
+    height: 50px;
     text-align: left;
 }
 
 .input-group input {
     width: 100%; height: 100%;
-    padding: 20px 10px 5px 40px; /* ຈັດຂໍ້ຄວາມລົງລຸ່ມ */
+    padding: 20px 10px 5px 40px;
     background: rgba(0, 0, 0, 0.2); 
     border: 1px solid rgba(255, 255, 255, 0.15);
     border-radius: 12px;
@@ -125,7 +124,6 @@ body {
     background: rgba(0, 0, 0, 0.4);
 }
 
-/* ✅ ແກ້ໄຂ Label: ໃຫ້ຢູ່ເຄິ່ງກາງ ແລະ ລອຍຂຶ້ນ */
 .input-group label {
     position: absolute;
     top: 50%; left: 40px;
@@ -146,7 +144,6 @@ body {
 }
 .input-group input:focus ~ .input-icon { color: var(--primary); }
 
-/* ✅ ແກ້ໄຂປຸ່ມ Login: ໃຫ້ໃຫຍ່ ແລະ ຢູ່ກາງ */
 #login-btn {
     width: 100%; height: 50px;
     border: none; border-radius: 12px;
@@ -165,7 +162,6 @@ body {
 }
 #login-btn:hover .btn-glow { transform: scale(1); }
 
-/* Error & Footer */
 #auth-error { margin-top: 20px; color: #ff4d4d; background: rgba(255,0,0,0.1); padding: 10px; border-radius: 8px; border: 1px solid rgba(255,0,0,0.2); font-size: 0.9rem; }
 .login-footer { position: absolute; bottom: 30px; width: 100%; text-align: center; z-index: 10000; }
 .login-footer p { color: rgba(255, 255, 255, 0.3); font-size: 0.85rem; letter-spacing: 1px; margin: 0; }
@@ -182,7 +178,6 @@ body {
 }
 .content-area { margin-left: 260px; width: calc(100% - 260px); padding: 30px; background: transparent; }
 
-/* Sidebar Menu */
 .logo { margin-bottom: 30px; }
 .menu-item {
     width: 100%; padding: 12px 20px; margin-bottom: 5px; border: none; background: transparent;
@@ -208,14 +203,12 @@ h1#page-title { font-size: 1.8rem; font-weight: 700; color: white; margin: 0; }
 .filter-group.grow { flex: 1; min-width: 200px; }
 .filter-group label { font-size: 0.85rem; color: var(--text-mute); }
 
-/* Inputs Main */
 input, select {
     height: 42px; background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255, 255, 255, 0.1);
     color: white; padding: 0 15px; border-radius: 8px; outline: none; width: 100%; transition: 0.3s;
 }
 input:focus, select:focus { border-color: var(--primary); background: rgba(15, 23, 42, 0.9); box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2); }
 
-/* ✅ NEW: Premium Button Styles */
 .quick-actions { display: flex; gap: 5px; }
 .action-buttons { display: flex; gap: 10px; }
 
@@ -242,7 +235,6 @@ input:focus, select:focus { border-color: var(--primary); background: rgba(15, 2
 }
 .btn-info-glass:hover { background: rgba(255,255,255,0.15); }
 
-/* Export Buttons */
 .export-actions { display: flex; gap: 8px; }
 .btn-export { border: none; padding: 8px 16px; border-radius: 8px; color: white; cursor: pointer; font-size: 0.9rem; display: flex; align-items: center; gap: 6px; transition: 0.3s; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
 .btn-export.pdf { background: linear-gradient(135deg, #ef4444, #c0392b); }
@@ -250,7 +242,6 @@ input:focus, select:focus { border-color: var(--primary); background: rgba(15, 2
 .btn-export.excel { background: linear-gradient(135deg, #10b981, #059669); }
 .btn-export.excel:hover { transform: translateY(-2px); box-shadow: 0 6px 12px rgba(16, 185, 129, 0.3); }
 
-/* Stats & Charts */
 .stat-card, .chart-box { background: var(--glass-bg); backdrop-filter: blur(5px); border: var(--glass-border); padding: 25px; border-radius: 16px; margin-bottom: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
 .stat-card h2 { font-size: 2.2rem; color: white; margin: 10px 0; }
 .trend-positive { color: #10b981; font-size: 0.85rem; display: block; margin-top: 5px; }
@@ -265,7 +256,6 @@ input:focus, select:focus { border-color: var(--primary); background: rgba(15, 2
 .chart-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
 .chart-box h3 { font-size: 1.1rem; color: white; border-left: 4px solid var(--primary); padding-left: 10px; margin: 0; }
 
-/* ✅ Reset Text Button */
 .btn-text-titanium {
     padding: 6px 15px; border-radius: 20px; border: 1px solid rgba(255, 255, 255, 0.15);
     background: rgba(30, 41, 59, 0.6); color: #cbd5e1; font-size: 0.85rem; font-weight: 500;
@@ -274,74 +264,72 @@ input:focus, select:focus { border-color: var(--primary); background: rgba(15, 2
 .btn-text-titanium:hover { color: white; background: rgba(59, 130, 246, 0.2); border-color: var(--primary); }
 
 /* Table */
-#branch-table {
-    width: 100%;
-    border-collapse: collapse;
-}
+#branch-table { width: 100%; border-collapse: collapse; }
+#branch-table th { text-align: center !important; vertical-align: middle; padding: 15px 10px; background: rgba(60, 75, 126, 0.3); color: #cbd5e1; font-weight: 600; font-size: 0.85rem; white-space: nowrap; border-bottom: 1px solid rgba(240, 235, 235, 0.1); }
+#branch-table td { text-align: center !important; vertical-align: middle; padding: 12px 10px; border-bottom: 1px solid rgba(255, 255, 255, 0.05); color: #e2e8f0; font-size: 0.9rem; }
+#branch-table td:first-child, #branch-table th:first-child { text-align: left !important; padding-left: 20px; }
 
-#branch-table th {
-    text-align: center !important; /* ຫົວຂໍ້ຢູ່ກາງ */
-    vertical-align: middle;
-    padding: 15px 10px;
-    background: rgba(60, 75, 126, 0.3);
-    color: #cbd5e1;
-    font-weight: 600;
-    font-size: 0.85rem;
-    white-space: nowrap;
-    border-bottom: 1px solid rgba(240, 235, 235, 0.1);
-}
-
-#branch-table td {
-    text-align: center !important; /* ຂໍ້ມູນຢູ່ກາງ */
-    vertical-align: middle;
-    padding: 12px 10px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-    color: #e2e8f0;
-    font-size: 0.9rem;
-}
-
-#branch-table td:first-child, 
-#branch-table th:first-child {
-    text-align: left !important; /* ສາຂາໃຫ້ຊິດຊ້າຍຄືເກົ່າ */
-    padding-left: 20px;
-}
-
-.table-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 20px 0;
-}
-
-#table-section-title {
-    margin: 0;
-    font-size: 1.2rem;
-    color: #ffffff;
-    font-weight: 700;
-}
+.table-header { display: flex; justify-content: space-between; align-items: center; padding: 20px 0; }
+#table-section-title { margin: 0; font-size: 1.2rem; color: #ffffff; font-weight: 700; }
 
 /* ==========================================
-   6. MODAL & UTILS
+   6. MODAL & UTILS (UPDATED: Grid & Radio Cards)
    ========================================== */
 .modal { display: none; position: fixed; inset: 0; z-index: 2000; background: rgba(0,0,0,0.8); backdrop-filter: blur(8px); align-items: center; justify-content: center; }
 .modal-content { background: #1e293b; border: 1px solid rgba(255,255,255,0.1); padding: 30px; border-radius: 20px; width: 90%; max-width: 500px; position: relative; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); animation: zoomIn 0.3s; }
-.goal-modal-wide { max-width: 900px; }
-@keyframes zoomIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 
-.close-btn { position: absolute; top: 15px; right: 20px; font-size: 24px; color: #94a3b8; cursor: pointer; transition: 0.2s; }
-.close-btn:hover { color: var(--danger); }
+/* --- ຈັດການ Modal ຈັດການສາຂາໃຫ້ສວຍງາມ (Updated) --- */
+.goal-modal-wide { max-width: 800px !important; background: #1e293b; border-radius: 20px; padding: 30px; }
 
-.drop-zone { border: 2px dashed rgba(255,255,255,0.2); padding: 30px; text-align: center; border-radius: 12px; cursor: pointer; background: rgba(255,255,255,0.02); transition: 0.3s; margin: 20px 0; }
-.drop-zone:hover { border-color: var(--primary); background: rgba(59, 130, 246, 0.05); }
+.goal-inputs-grid {
+    display: grid;
+    grid-template-columns: 3fr 1fr 2fr auto; /* ຊື່(3), ປີ(1), ເງິນ(2), ປຸ່ມ(auto) */
+    gap: 15px;
+    align-items: flex-end;
+    margin-bottom: 25px;
+    background: rgba(255, 255, 255, 0.02);
+    padding: 20px;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
 
-.btn-confirm { background: var(--primary); color: white; border: none; padding: 12px; border-radius: 8px; width: 100%; cursor: pointer; font-weight: 600; }
-.btn-confirm:hover { background: var(--primary-hover); }
-.btn-delete { background: transparent; border: 1px solid var(--danger); color: var(--danger); padding: 12px; border-radius: 8px; cursor: pointer; width: 100%; }
-.btn-delete:hover { background: var(--danger); color: white; }
+.goal-inputs-grid .input-box { width: 100%; }
+.goal-inputs-grid input, .goal-inputs-grid select { width: 100%; }
+.goal-inputs-grid button { height: 42px; padding: 0 25px; white-space: nowrap; }
+
+.input-box label { display: block; margin-bottom: 8px; font-size: 0.85rem; color: #94a3b8; }
+
+/* --- ຈັດການປຸ່ມເລືອກປະເພດອັບໂຫລດ (Radio Card Style - NEW) --- */
+.upload-type-container { display: flex; gap: 15px; margin-bottom: 20px; }
+.radio-card { flex: 1; position: relative; }
+.radio-card input { position: absolute; opacity: 0; cursor: pointer; height: 0; width: 0; }
+.radio-card label {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: 15px; background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px;
+    cursor: pointer; transition: all 0.3s ease; color: #94a3b8; font-size: 0.9rem; height: 100%;
+}
+.radio-card label i { font-size: 1.5rem; margin-bottom: 8px; }
+
+/* Effect Checked */
+.radio-card input:checked + label { background: rgba(59, 130, 246, 0.15); border-color: #3b82f6; color: #ffffff; box-shadow: 0 0 15px rgba(59, 130, 246, 0.2); font-weight: bold; }
+.radio-card input[value="NEW"]:checked + label { background: rgba(245, 158, 11, 0.15); border-color: #f59e0b; box-shadow: 0 0 15px rgba(245, 158, 11, 0.2); }
+
+/* ປຸ່ມປິດ Modal */
+.close-btn { position: absolute; top: 20px; right: 25px; font-size: 28px; color: #94a3b8; cursor: pointer; transition: 0.2s; z-index: 10; }
+.close-btn:hover { color: #ef4444; transform: rotate(90deg); }
+
+/* ຈັດການຕາຕະລາງໃນ Modal */
+#goal-table-body tr td { padding: 12px 15px; border-bottom: 1px solid rgba(255, 255, 255, 0.05); vertical-align: middle; }
+
+/* ປຸ່ມນ້ອຍໃນຕາຕະລາງ */
+.btn-edit-small, .btn-delete-small { padding: 5px 10px; border-radius: 6px; font-size: 0.8rem; transition: 0.2s; }
+.btn-edit-small:hover { background: rgba(59, 130, 246, 0.1); }
+.btn-delete-small:hover { background: rgba(239, 68, 68, 0.1); }
 
 .flex-1 { flex: 1; }
-.goal-inputs-grid { display: grid; grid-template-columns: 2fr 1fr 1.5fr auto; gap: 15px; align-items: end; margin-bottom: 20px; }
 .scrollable-table { max-height: 400px; overflow-y: auto; }
 
 /* Animation Keyframes */
 @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes zoomIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
