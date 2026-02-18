@@ -566,7 +566,7 @@ function renderCharts(uniqueData) {
         series: [{ 
             data: totals, 
             type: 'bar', 
-            itemStyle: { color: '#3b82f6', borderRadius: [4, 4, 0, 0] },
+            itemStyle: { color: '#48f63bff', borderRadius: [4, 4, 0, 0] },
             name: 'ຍອດເງິນປັດຈຸບັນ',
             barMaxWidth: 60
         }]
@@ -581,9 +581,9 @@ function renderCharts(uniqueData) {
 
     const totalAccounts = activeCount + inactiveCount + zeroCount;
     const donutData = [
-        { value: activeCount, name: 'ເຄື່ອນໄຫວ', itemStyle: { color: '#10b981' } },   
-        { value: inactiveCount, name: 'ບໍ່ເຄື່ອນໄຫວ', itemStyle: { color: '#f59e0b' } }, 
-        { value: zeroCount, name: 'ບັນຊີສູນ', itemStyle: { color: '#ef4444' } }       
+        { value: activeCount, name: 'ເຄື່ອນໄຫວ', itemStyle: { color: '#e29c46ff' } },   
+        { value: inactiveCount, name: 'ບໍ່ເຄື່ອນໄຫວ', itemStyle: { color: '#21dcccff' } }, 
+        { value: zeroCount, name: 'ບັນຊີສູນ', itemStyle: { color: '#44d289ff' } }       
     ];
 
     charts.donut.setOption({
