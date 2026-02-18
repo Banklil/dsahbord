@@ -1,18 +1,24 @@
 /* ==========================================
    1. GLOBAL VARIABLES & RESET
    ========================================== */
+/* ກອບປີ້ສ່ວນນີ້ໄປທັບ :root ທາງເທິງສຸດຂອງ dashbord.css */
 :root {
-    --primary: #3b82f6;          /* ສີຟ້າສົດ (LDB Highlight) */
-    --primary-hover: #2563eb;
-    --bg-body: #020617;          /* ສີພື້ນຫຼັງຫຼັກ (Deep Space) */
+    /* ສີຫຼັກປ່ຽນເປັນສີມ່ວງໄວໂອເລັດ */
+    --primary: #8b5cf6;           /* Violet 500 */
+    --primary-hover: #7c3aed;     /* Violet 600 */
     
-    /* Glass Effect */
-    --glass-bg: rgba(30, 41, 59, 0.7);
-    --glass-border: 1px solid rgba(255, 255, 255, 0.1);
+    /* ພື້ນຫຼັງ (ປັບໃຫ້ມືດລົງ ແລະ ອົມມ່ວງນິດໆ) */
+    --bg-body: #0a0118;
     
-    --text-main: #f8fafc;        
-    --text-mute: #94a3b8;        
+    /* ປັບສີພື້ນຫຼັງແກ້ວ (Glass) ໃຫ້ອອກໂທນມ່ວງ */
+    --glass-bg: rgba(30, 20, 50, 0.7);
+    --glass-border: 1px solid rgba(139, 92, 246, 0.2); /* ຂອບມີສີມ່ວງນິດໆ */
     
+    /* ສີຕົວອັກສອນ */
+    --text-main: #faf5ff;        
+    --text-mute: #a78bfa; /* ຕົວໜັງສືສີເທົາ ໃຫ້ອົມມ່ວງ */       
+    
+    /* ສີສະຖານະ */
     --success: #10b981;
     --danger: #ef4444;
     --warning: #f59e0b;
@@ -237,9 +243,9 @@ input:focus, select:focus { border-color: var(--primary); background: rgba(15, 2
 
 .export-actions { display: flex; gap: 8px; }
 .btn-export { border: none; padding: 8px 16px; border-radius: 8px; color: white; cursor: pointer; font-size: 0.9rem; display: flex; align-items: center; gap: 6px; transition: 0.3s; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-.btn-export.pdf { background: linear-gradient(135deg, #ef4444, #c0392b); }
+.btn-export.pdf { background: linear-gradient(135deg, #519ae7, #5cc9e7); }
 .btn-export.pdf:hover { transform: translateY(-2px); box-shadow: 0 6px 12px rgba(239, 68, 68, 0.3); }
-.btn-export.excel { background: linear-gradient(135deg, #10b981, #059669); }
+.btn-export.excel { background: linear-gradient(135deg, #36adb3, #218796); }
 .btn-export.excel:hover { transform: translateY(-2px); box-shadow: 0 6px 12px rgba(16, 185, 129, 0.3); }
 
 .stat-card, .chart-box { background: var(--glass-bg); backdrop-filter: blur(5px); border: var(--glass-border); padding: 25px; border-radius: 16px; margin-bottom: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
