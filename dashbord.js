@@ -302,65 +302,133 @@ function renderMainTable(tableData) {
     const tbody = document.querySelector('#branch-table tbody');
     if (!tbody) return;
     
-    let allBranches = [...new Set([ ...rawData.map(d => d.branch_name), ...dynamicBranchSettings.map(s => s.branch_name) ])];
-    allBranches.sort();
+    // 1. ດຶງລາຍຊື່ສາຂາທັງໝົດມາລວມກັນ
+    let allBranches = [...new Set([
+        ...rawData.map(d => d.branch_name), 
+        ...dynamicBranchSettings.map(s => s.branch_name)
+    ])];
 
-    let TB=0, TP=0, TO=0, TC=0, TD25=0, TDP=0, TDO=0;
+    // ✅ 2. ກຳນົດລຳດັບທີ່ທ່ານຕ້ອງການ (Custom Order)
+    const customOrder = [
+        "ສາຂາພາກນະຄອນຫຼວງ",
+        "ສາຂານ້ອຍໂພນໄຊ",
+        "ສາຂານ້ອຍດອນໜູນ",
+        "ສາຂານ້ອຍຊັງຈ້ຽງ",   // (ຕົວຢ່າງ) ສາມາດສັບປ່ຽນບ່ອນນີ້ໄດ້
+        "ສາຂານ້ອຍໜອງໜ່ຽງ"    // (ຕົວຢ່າງ) ສາມາດສັບປ່ຽນບ່ອນນີ້ໄດ້
+    ];
+
+    // ✅ 3. ສັ່ງຈັດລຽງ
+    allBranches.sort((a, b) => {
+        let indexA = customOrder.indexOf(a);
+        let indexB = customOrder.indexOf(b);
+
+        // ຖ້າຊື່ສາຂາບໍ່ຢູ່ໃນ customOrder ໃຫ້ມັນໄປຢູ່ທ້າຍສຸດ (Assign 999)
+        if (indexA === -1) indexA = 999;
+        if (indexB === -1) indexB = 999;
+
+        // ລຽງຕາມຕົວເລກ Index (ນ້ອຍ -> ໃຫຍ່)
+        if (indexA !== indexB) return indexA - indexB;
+
+        // ຖ້າບໍ່ມີໃນລາຍຊື່ທັງຄູ່ ໃຫ້ລຽງຕາມຕົວອັກສອນ ກ-ຮ
+        return a.localeCompare(b, 'lo');
+    });
+
+    // --- ຕົວປ່ຽນສຳລັບຄິດໄລ່ຍອດລວມ (Grand Total) ---
+    let totalBaseline = 0; 
+    let totalPlan26 = 0;
+    let totalOpening = 0; 
+    let totalClosing = 0; 
+    let totalDiff25 = 0;
+    let totalDiffPlan = 0;
+    let totalDiffOpening = 0;
     
     const rowsHtml = allBranches.map(bName => {
         const set2025 = dynamicBranchSettings.find(s => s.branch_name === bName && s.target_year === 2025);
         const set2026 = dynamicBranchSettings.find(s => s.branch_name === bName && s.target_year === 2026);
         const plan2026 = set2026 ? set2026.target_amount : 0; 
+        
         const bData = tableData.filter(d => d.branch_name === bName);
-        const accGroups = {};
-        bData.forEach(d => { if(!accGroups[d.ascount_no]) accGroups[d.ascount_no] = []; accGroups[d.ascount_no].push(d); });
-
-        let sumO = 0, sumC = 0; 
-        Object.values(accGroups).forEach(recs => {
-            recs.sort((a, b) => a.date_key.localeCompare(b.date_key));
-            sumO += (Number(recs[0].opening_banlance) || 0);
-            sumC += (Number(recs[recs.length - 1].closing_balance) || 0);
+        
+        // Group ຂໍ້ມູນເພື່ອຫາຍອດເປີດ/ປິດ ທີ່ແທ້ຈິງ
+        const accountGroups = {};
+        bData.forEach(d => {
+            if(!accountGroups[d.ascount_no]) accountGroups[d.ascount_no] = [];
+            accountGroups[d.ascount_no].push(d);
         });
 
-        let base = yearEnd2025Data[bName] || (set2025?.balance_prev_year || 0);
-        const d25 = sumC - base, dP = sumC - plan2026, dO = sumC - sumO;
-        let p25 = base !== 0 ? (d25/base)*100 : (sumC>0?100:0), pP = plan2026 !== 0 ? (sumC/plan2026)*100 : 0;
+        let sumOpeningCol4 = 0; 
+        let sumClosingCol5 = 0; 
 
-        TB+=base; TP+=plan2026; TO+=sumO; TC+=sumC; TD25+=d25; TDP+=dP; TDO+=dO;
+        Object.values(accountGroups).forEach(recs => {
+            // ລຽງວັນທີ
+            recs.sort((a, b) => (a.date_key > b.date_key) ? 1 : -1);
+            sumOpeningCol4 += (Number(recs[0].opening_banlance) || 0);
+            sumClosingCol5 += (Number(recs[recs.length - 1].closing_balance) || 0);
+        });
 
-        const fmt = (v, p) => `<div style="display:flex; justify-content:center; gap:4px; color:${v>=0?'#10b981':'#ef4444'}"><span>${v>=0?'▲':'▼'}</span><span>${Math.abs(v).toLocaleString()}${p?'%':''}</span></div>`;
+        // ຍອດຍົກມາ (Col 2)
+        let baselineVal = 0;
+        if (currentActivePage === 'PUPOM') {
+            baselineVal = yearEnd2025Data[bName] || 0;
+            if (baselineVal === 0 && set2025) baselineVal = set2025.balance_prev_year || 0;
+        } else {
+            // Beerlao/Campaign
+            const allHistoryData = rawData.filter(d => d.branch_name === bName);
+            const historyAccounts = {};
+            allHistoryData.forEach(d => { if(!historyAccounts[d.ascount_no]) historyAccounts[d.ascount_no] = []; historyAccounts[d.ascount_no].push(d); });
+            Object.values(historyAccounts).forEach(recs => { recs.sort((a, b) => (a.date_key > b.date_key) ? 1 : -1); baselineVal += (Number(recs[0].closing_balance) || 0); });
+        }
+
+        // ຄິດໄລ່ສ່ວນຕ່າງ
+        const diff25 = sumClosingCol5 - baselineVal;
+        const diffPlan = sumClosingCol5 - plan2026;
+        const diffOpening = sumClosingCol5 - sumOpeningCol4;
+        
+        let pct25 = baselineVal !== 0 ? ((sumClosingCol5 - baselineVal) / baselineVal) * 100 : (sumClosingCol5 > 0 ? 100 : 0);
+        let pctPlan = plan2026 !== 0 ? (sumClosingCol5 / plan2026) * 100 : 0;
+
+        // ບວກຍອດລວມ
+        totalBaseline += baselineVal; totalPlan26 += plan2026; totalOpening += sumOpeningCol4;
+        totalClosing += sumClosingCol5; totalDiff25 += diff25; totalDiffPlan += diffPlan; totalDiffOpening += diffOpening;
+
+        // Formatter
+        const formatTrend = (v, p) => `<div style="display:flex; justify-content:center; gap:4px; color:${v>=0?'#10b981':'#ef4444'}"><span>${v>=0?'▲':'▼'}</span><span>${Math.abs(v).toLocaleString()}${p?'%':''}</span></div>`;
+        const formatPct = (v) => `<div style="font-weight:bold; color:${v>=100?'#10b981':(v>=80?'#fbbf24':'#ef4444')}">${v.toFixed(1)}%</div>`;
 
         return `<tr>
-            <td style="text-align:left; padding-left:20px;">${bName}</td>
-            <td align="center">${base.toLocaleString()}</td>
-            <td align="center">${plan2026.toLocaleString()}</td>
-            <td align="center" style="color:#fbbf24;">${sumO.toLocaleString()}</td>
-            <td align="center" style="color:#3b82f6;">${sumC.toLocaleString()}</td>
-            <td align="center">${fmt(d25)}</td>
-            <td align="center">${fmt(dP)}</td>
-            <td align="center">${fmt(dO)}</td>
-            <td align="center">${fmt(p25, true)}</td>
-            <td align="center" style="color:${pP>=100?'#10b981':'#fbbf24'}">${pP.toFixed(1)}%</td>
+            <td style="font-size:0.85rem; padding: 12px; text-align:left;">${bName}</td>
+            <td align="center" style="font-weight:bold; color:#e2e8f0;">${baselineVal.toLocaleString()}</td>
+            <td align="center" style="color:#94a3b8;">${plan2026.toLocaleString()}</td>
+            <td align="center" style="color:#fbbf24; font-weight:bold;">${sumOpeningCol4.toLocaleString()}</td>
+            <td align="center" style="color:#3b82f6; font-weight:bold;">${sumClosingCol5.toLocaleString()}</td>
+            <td align="center">${formatTrend(diff25)}</td>
+            <td align="center">${formatTrend(diffPlan)}</td>
+            <td align="center">${formatTrend(diffOpening)}</td>
+            <td align="center">${formatTrend(pct25, true)}</td>
+            <td align="center">${formatPct(pctPlan)}</td>
         </tr>`;
     }).join('');
 
-    const totalHtml = `<tr style="background:#0f172a; font-weight:bold;">
-        <td style="text-align:left; padding-left:20px;">ລວມທັງໝົດ</td>
-        <td align="center">${TB.toLocaleString()}</td><td align="center">${TP.toLocaleString()}</td>
-        <td align="center" style="color:#fbbf24;">${TO.toLocaleString()}</td>
-        <td align="center" style="color:#3b82f6;">${TC.toLocaleString()}</td>
-        <td align="center">${fmt(TD25)}</td>
-        <td align="center">${fmt(TDP)}</td>
-        <td align="center">${fmt(TDO)}</td>
-        <td align="center">${(TB?((TC-TB)/TB)*100:0).toFixed(1)}%</td>
-        <td align="center" style="color:${TP && (TC/TP)*100>=100?'#10b981':'#fbbf24'}">${(TP?(TC/TP)*100:0).toFixed(1)}%</td>
+    // Grand Total Row
+    let totalPctPlan = totalPlan26 !== 0 ? (totalClosing / totalPlan26) * 100 : 0;
+    let totalPct25 = totalBaseline !== 0 ? ((totalClosing - totalBaseline) / totalBaseline) * 100 : 0;
+
+    const formatTotalTrend = (v, p) => `<div style="display:flex; justify-content:center; gap:4px; color:${v>=0?'#4ade80':'#f87171'}"><span>${v>=0?'▲':'▼'}</span><span>${Math.abs(v).toLocaleString()}${p?'%':''}</span></div>`;
+
+    const totalHtml = `<tr style="background-color: #0f172a; border-top: 2px solid #334155; font-weight: bold;">
+        <td style="padding: 15px; color: #ffffff; text-align: left;">ລວມທັງໝົດ</td>
+        <td align="center" style="color: #ffffff;">${totalBaseline.toLocaleString()}</td>
+        <td align="center" style="color: #ffffff;">${totalPlan26.toLocaleString()}</td>
+        <td align="center" style="color: #fbbf24;">${totalOpening.toLocaleString()}</td>
+        <td align="center" style="color: #3b82f6;">${totalClosing.toLocaleString()}</td>
+        <td align="center">${formatTotalTrend(totalDiff25)}</td>
+        <td align="center">${formatTotalTrend(totalDiffPlan)}</td>
+        <td align="center">${formatTotalTrend(totalDiffOpening)}</td>
+        <td align="center">${formatTotalTrend(totalPct25, true)}</td>
+        <td align="center" style="color:${totalPctPlan>=100?'#4ade80':'#fbbf24'}">${totalPctPlan.toFixed(1)}%</td>
     </tr>`;
-    tbody.innerHTML = rowsHtml + totalHtml;
     
-    // ຟັງຊັນຊ່ວຍໃນການ Format Total (ເພີ່ມເຂົ້າໄປເພື່ອບໍ່ໃຫ້ Error)
-    function fmt(v, p) { 
-        return `<div style="display:flex; justify-content:center; gap:4px; color:${v>=0?'#4ade80':'#f87171'}"><span>${v>=0?'▲':'▼'}</span><span>${Math.abs(v).toLocaleString()}${p?'%':''}</span></div>`;
-    }
+    tbody.innerHTML = rowsHtml + totalHtml;
 }
 
 // ==========================================
@@ -833,10 +901,87 @@ async function deleteDataByDate() {
 }
 
 function exportToPDF() {
-    const element = document.getElementById('table-content-area'); 
-    const today = new Date().toISOString().slice(0,10);
-    const opt = { margin: [0.2, 0.2, 0.2, 0.2], filename: `Report_${today}.pdf`, image: { type: 'jpeg', quality: 1.0 }, html2canvas: { scale: 3, useCORS: true, backgroundColor: '#1e293b' }, jsPDF: { unit: 'in', format: 'a3', orientation: 'landscape' } };
-    html2pdf().set(opt).from(element).save();
+    const element = document.getElementById('table-content-area');
+    if (!element) {
+        alert("ບໍ່ພົບຂໍ້ມູນທີ່ຈະດາວໂຫລດ!");
+        return;
+    }
+
+    const today = new Date().toISOString().slice(0, 10);
+    let pdfTitle = "ລາຍງານທົ່ວໄປ";
+    if (currentActivePage === 'PUPOM') pdfTitle = "ລາຍງານ ປູພົມ";
+    else if (currentActivePage === 'BEERLAO') pdfTitle = "ລາຍງານ ເບຍລາວ";
+    else if (currentActivePage === 'CAMPAIGN') pdfTitle = "ລາຍງານ ລູກຄ້າແຄມແປນ";
+
+    const opt = {
+        margin: [0.2, 0.2, 0.2, 0.2], 
+        filename: `${pdfTitle}_${today}.pdf`,
+        image: { type: 'jpeg', quality: 1.0 },
+        html2canvas: { 
+            scale: 2, 
+            useCORS: true, 
+            backgroundColor: '#1e293b', // ພື້ນຫຼັງສີເຂັ້ມ
+            scrollY: 0
+        },
+        jsPDF: { unit: 'in', format: 'a3', orientation: 'landscape' }
+    };
+
+    // ສ້າງ Container ຊົ່ວຄາວ
+    const container = document.createElement('div');
+    container.style.backgroundColor = '#1e293b'; 
+    container.style.padding = '20px';
+    container.style.fontFamily = '"Noto Sans Lao", sans-serif';
+    container.style.width = '100%';
+    
+    // ✅ ຕັ້ງຄ່າສີເລີ່ມຕົ້ນເປັນສີຂາວ (ສຳລັບຕົວໜັງສືທົ່ວໄປ)
+    container.style.color = '#ffffff'; 
+
+    // Header
+    const header = document.createElement('h1');
+    header.innerText = `${pdfTitle} (ປະຈຳວັນທີ: ${today})`;
+    header.style.textAlign = 'center';
+    header.style.fontSize = '24px';
+    header.style.marginBottom = '20px';
+    header.style.color = '#3b82f6'; 
+    container.appendChild(header);
+
+    // Clone Table
+    const tableClone = element.cloneNode(true);
+    const table = tableClone.querySelector('table');
+    if (table) {
+        table.style.width = '100%';
+        table.style.borderCollapse = 'collapse';
+    }
+    
+    // ແຕ່ງຫົວຕາຕະລາງ (TH)
+    const ths = tableClone.querySelectorAll('th');
+    ths.forEach(th => {
+        th.style.backgroundColor = '#0f172a';
+        th.style.color = '#fbbf24'; 
+        th.style.border = '1px solid #334155';
+    });
+
+    // ✅ ແຕ່ງເນື້ອໃນຕາຕະລາງ (TD) - ແກ້ໄຂຈຸດນີ້!
+    const tds = tableClone.querySelectorAll('td');
+    tds.forEach(td => {
+        td.style.borderBottom = '1px solid #334155';
+        
+        // ⚠️ Logic ສຳຄັນ: 
+        // ຖ້າໃນ TD ມີການກຳນົດສີໄວ້ແລ້ວ (ເຊັ່ນ: ສີຟ້າ, ສີເຫຼືອງ) ໃຫ້ໃຊ້ສີນັ້ນ
+        // ຖ້າບໍ່ມີ -> ໃຫ້ໃຊ້ສີຂາວ
+        if (!td.style.color && !td.getAttribute('style')?.includes('color')) {
+            td.style.color = '#ffffff';
+        }
+        
+        // ສຳລັບພວກທີ່ມີ <div> ຂ້າງໃນ (ພວກ % ແລະ Trend) ໃຫ້ມັນຮັກສາສີເດີມໄວ້
+        // ບໍ່ຕ້ອງໄປບັງຄັບປ່ຽນສີມັນ
+    });
+
+    container.appendChild(tableClone);
+
+    html2pdf().set(opt).from(container).save().then(() => {
+        // ສຳເລັດ
+    });
 }
 
 function exportToExcel() {
