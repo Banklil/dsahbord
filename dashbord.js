@@ -331,7 +331,7 @@ function updateUI(filteredData) {
 }
 
 // ==========================================
-// 4.1 Table Rendering (✅ ແກ້ໄຂ: ແຍກສູດຄິດໄລ່ໜ້າປູພົມ ອອກຈາກ ໜ້າແຄມແປນ/ເບຍລາວ)
+// 4.1 Table Rendering (✅ ສະບັບສົມບູນ: ມີລູກສອນ ▲ ▼ ໃນທຸກຖັນປຽບທຽບ)
 // ==========================================
 function renderMainTable(tableData) {
     const tbody = document.querySelector('#branch-table tbody');
@@ -347,27 +347,48 @@ function renderMainTable(tableData) {
 
     let TB=0, TP=0, TO=0, TC=0, TD25=0, TDP=0, TDO=0;
     
+    // ✅ ຟັງຊັນຈັດ Format ໃຫ້ມີລູກສອນ ແລະ ສີແຍກຊັດເຈນ
+    const fmt = (v, isPercent = false, isPlan = false) => {
+        // ສຳລັບຖັນທຽບແຜນ (%) ຖ້າຮອດ 100% ໃຫ້ເປັນສີຂຽວ, ບໍ່ຮອດໃຫ້ເປັນສີເຫຼືອງ
+        if (isPlan) {
+            const color = v >= 100 ? '#10b981' : '#fbbf24';
+            const arrow = v >= 100 ? '▲' : '▼';
+            return `<div style="display:flex; justify-content:center; gap:4px; color:${color}; font-weight:bold;">
+                        <span>${arrow}</span>
+                        <span>${v.toFixed(1)}%</span>
+                    </div>`;
+        }
+        
+        // ສຳລັບຖັນທຽບທົ່ວໄປ: ບວກ = ຂຽວ (▲), ລົບ = ແດງ (▼)
+        const color = v >= 0 ? '#10b981' : '#ef4444';
+        const arrow = v >= 0 ? '▲' : '▼';
+        const formattedNum = v.toLocaleString(undefined, { 
+            minimumFractionDigits: isPercent ? 1 : 0, 
+            maximumFractionDigits: isPercent ? 1 : 2 
+        });
+        
+        return `<div style="display:flex; justify-content:center; gap:4px; color:${color}; font-weight:500;">
+                    <span>${arrow}</span>
+                    <span>${formattedNum}${isPercent ? '%' : ''}</span>
+                </div>`;
+    };
+
     const rowsHtml = allBranches.map(bName => {
         const set2025 = dynamicBranchSettings.find(s => s.branch_name === bName && s.target_year === 2025);
         const set2026 = dynamicBranchSettings.find(s => s.branch_name === bName && s.target_year === 2026);
         const plan2026 = set2026 ? set2026.target_amount : 0; 
         
         const bData = tableData.filter(d => d.branch_name === bName);
-
         const accMap = new Map();
         bData.forEach(d => {
             if (!accMap.has(d.ascount_no)) accMap.set(d.ascount_no, []);
             accMap.get(d.ascount_no).push(d);
         });
 
-        let sumO = 0; 
-        let sumC = 0; 
-
-        // 1. ຫາຍອດປະຕິບັດ ແລະ ຍອດເປີດ (ດຶງຈາກ Excel ຕາມຈິງກ່ອນ)
+        let sumO = 0, sumC = 0; 
         accMap.forEach(records => {
             records.sort((a, b) => b.date_key.localeCompare(a.date_key));
             sumC += (Number(records[0].closing_balance) || 0);
-
             let accountOpen = 0;
             for (let r of records) {
                 if (Number(r.opening_balance) > 0) {
@@ -378,38 +399,19 @@ function renderMainTable(tableData) {
             sumO += accountOpen;
         });
 
-        // 2. ຫາຍອດຍົກມາ (31/12/2025)
         let baselineVal = yearEnd2025Data[bName] || 0;
         if (baselineVal === 0 && set2025) baselineVal = set2025.balance_prev_year || 0;
 
-        // 3. ຄິດໄລ່ "ຍອດເງິນເປີດໃໝ່" ໃໝ່ (ສະເພາະແຄມແປນ ແລະ ເບຍລາວ)
-        if (currentActivePage === 'BEERLAO' || currentActivePage === 'CAMPAIGN' || currentActivePage === 'CASHBACK') {
-            sumO = sumC - baselineVal; 
-            if (sumO < 0) sumO = 0;
-        }
-
-        // ==========================================
-        // 🎯 4. ແຍກສູດຄິດໄລ່ການປຽບທຽບໃຫ້ຖືກໜ້າ
-        // ==========================================
+        // 🎯 ສູດຄິດໄລ່
         const d25 = sumC - baselineVal; 
         const dP = sumC - plan2026;     
+        let dO = (currentActivePage === 'BEERLAO' || currentActivePage === 'CAMPAIGN' || currentActivePage === 'CASHBACK') 
+                 ? baselineVal - sumC : sumC - sumO; 
         
-        let dO = 0;
-        // ✅ ຖ້າເປັນໜ້າ ເບຍລາວ ຫຼື ແຄມແປນ -> ໃຫ້ເອົາ ຍອດຍົກມາ - ປະຕິບັດ
-        if (currentActivePage === 'BEERLAO' || currentActivePage === 'CAMPAIGN' || currentActivePage === 'CASHBACK') {
-            dO = baselineVal - sumC;  
-        } 
-        // ✅ ຖ້າເປັນໜ້າ ປູພົມ ຫຼື ອື່ນໆ -> ໃຫ້ເອົາ ປະຕິບັດ - ຍອດເປີດໃໝ່ (ແບບດັ້ງເດີມ)
-        else {
-            dO = sumC - sumO; 
-        }
-        
-        let p25 = baselineVal !== 0 ? (d25/baselineVal)*100 : (sumC>0?100:0);
-        let pP = plan2026 !== 0 ? (sumC/plan2026)*100 : 0;
+        let p25 = baselineVal !== 0 ? (d25 / baselineVal) * 100 : (sumC > 0 ? 100 : 0);
+        let pP = plan2026 !== 0 ? (sumC / plan2026) * 100 : 0;
 
         TB+=baselineVal; TP+=plan2026; TO+=sumO; TC+=sumC; TD25+=d25; TDP+=dP; TDO+=dO;
-
-        const fmt = (v, p) => `<div style="display:flex; justify-content:center; gap:4px; color:${v>=0?'#10b981':'#ef4444'}"><span>${v>=0?'▲':'▼'}</span><span>${Math.abs(v).toLocaleString()}${p?'%':''}</span></div>`;
 
         return `<tr>
             <td style="text-align:left; padding-left:20px;">${bName}</td>
@@ -419,11 +421,12 @@ function renderMainTable(tableData) {
             <td align="center" style="color:#3b82f6;">${sumC.toLocaleString()}</td>
             <td align="center">${fmt(d25)}</td>
             <td align="center">${fmt(dP)}</td>
-            <td align="center">${fmt(dO)}</td> <td align="center">${fmt(p25, true)}</td>
-            <td align="center" style="color:${pP>=100?'#10b981':'#fbbf24'}">${pP.toFixed(1)}%</td>
-        </tr>`;
+            <td align="center">${fmt(dO)}</td> 
+            <td align="center">${fmt(p25, true)}</td>
+            <td align="center">${fmt(pP, true, true)}</td> </tr>`;
     }).join('');
 
+    // ... (ສ່ວນ Total Html ໃຫ້ໃຊ້ fmt ຄືກັນ)
     const totalHtml = `<tr style="background:#0f172a; font-weight:bold;">
         <td style="text-align:left; padding-left:20px;">ລວມທັງໝົດ</td>
         <td align="center" style="color:#ffffff;">${TB.toLocaleString()}</td>
@@ -433,15 +436,11 @@ function renderMainTable(tableData) {
         <td align="center">${fmt(TD25)}</td>
         <td align="center">${fmt(TDP)}</td>
         <td align="center">${fmt(TDO)}</td>
-        <td align="center">${(TB?((TC-TB)/TB)*100:0).toFixed(1)}%</td>
-        <td align="center" style="color:${TP && (TC/TP)*100>=100?'#10b981':'#fbbf24'}">${(TP?(TC/TP)*100:0).toFixed(1)}%</td>
+        <td align="center">${fmt(TB?((TC-TB)/TB)*100:0, true)}</td>
+        <td align="center">${fmt(TP?(TC/TP)*100:0, true, true)}</td>
     </tr>`;
     
     tbody.innerHTML = rowsHtml + totalHtml;
-
-    function fmt(v, p) { 
-        return `<div style="display:flex; justify-content:center; gap:4px; color:${v>=0?'#4ade80':'#f87171'}"><span>${v>=0?'▲':'▼'}</span><span>${Math.abs(v).toLocaleString()}${p?'%':''}</span></div>`;
-    }
 }
 
 // ==========================================
