@@ -609,11 +609,12 @@ function setQuickFilter(type) {
 }
 
 // ==========================================
-// 7. Chart Logic
+// 7. Chart Logic (✅ ແກ້ໄຂບັກຕົວເລກກາງວົງມົນຄ້າງ)
 // ==========================================
 function renderCharts(uniqueData) {
     if (!charts.area || !charts.donut) return;
 
+    // --- 1. ກຣາຟແທ່ງ (Area Chart) ---
     const branches = [...new Set(dynamicBranchSettings.map(s => s.branch_name))]; 
     const totals = branches.map(b => {
         const branchData = uniqueData.filter(d => d.branch_name === b);
@@ -652,12 +653,13 @@ function renderCharts(uniqueData) {
         }]
     });
 
+    // --- 2. ກຣາຟວົງມົນ (Donut Chart) ---
     let activeCount = 0, inactiveCount = 0, zeroCount = 0;
     uniqueData.forEach(d => {
-        // ✅ ແກ້ໄຂ: ໃຫ້ Chart ອ່ານຄ່າ opening ໄດ້ຖືກຕ້ອງ
-        const open = Number(d.opening_balance) || Number(d.opening_banlance) || 0;
+        const open = Number(d.opening_balance) || 0;
         const close = Number(d.closing_balance) || 0;
-        if (close === 0) zeroCount++; 
+        
+        if (close <= 0) zeroCount++; // ປັບໃຫ້ນັບຍອດ 0 ຫຼື ຕິດລົບ ເປັນບັນຊີສູນ
         else if (open !== close) activeCount++; 
         else inactiveCount++;
     });
@@ -669,6 +671,10 @@ function renderCharts(uniqueData) {
         { value: zeroCount, name: 'ບັນຊີສູນ', itemStyle: { color: '#44d289ff' } }       
     ];
 
+    // 🔥 ຄຳສັ່ງນີ້ສຳຄັນຫຼາຍ! ລ້າງຄວາມຈຳເກົ່າຂອງກຣາຟຖິ້ມກ່ອນ ເພື່ອບໍ່ໃຫ້ມັນຄ້າງ
+    charts.donut.clear();
+
+    // ຕັ້ງຄ່າແຕ້ມກຣາຟໃໝ່
     charts.donut.setOption({
         title: {
             text: totalAccounts.toLocaleString(),
@@ -694,13 +700,21 @@ function renderCharts(uniqueData) {
         }]
     });
 
+    // 🔥 ຟັງຊັນກົດປຸ່ມແລ້ວປ່ຽນຕົວເລກທັນທີ
     charts.donut.off('legendselectchanged'); 
     charts.donut.on('legendselectchanged', function(params) {
         let newTotal = 0;
+        // ອ່ານຄ່າໃໝ່ສະເພາະໂຕທີ່ຖືກເປີດ (ສີຂຽວ, ສີສົ້ມ)
         donutData.forEach(item => {
-            if (params.selected[item.name]) newTotal += item.value;
+            if (params.selected[item.name]) {
+                newTotal += item.value;
+            }
         });
-        charts.donut.setOption({ title: { text: newTotal.toLocaleString() } });
+        
+        // ບັງຄັບໃຫ້ອັບເດດສະເພາະຕົວໜັງສືທາງກາງທັນທີ
+        charts.donut.setOption({ 
+            title: { text: newTotal.toLocaleString() } 
+        });
     });
 }
 
