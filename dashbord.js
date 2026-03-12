@@ -60,7 +60,8 @@ function initApp() {
         'CAMPAIGN': 'ລາຍລະອຽດຂໍ້ມູນ ລູກຄ້າແຄມແປນ'
     };
 
-    document.querySelectorAll('.menu-item').forEach(btn => {
+    // --- ແກ້ໄຂ: ປັບປຸງການສະຫຼັບໜ້າຫຼັກ ---
+    document.querySelectorAll('.menu-item[data-view]').forEach(btn => {
         btn.onclick = function() {
             document.querySelectorAll('.menu-item').forEach(b => b.classList.remove('active'));
             this.classList.add('active');
@@ -72,12 +73,10 @@ function initApp() {
             }
 
             if (view === 'KPI') {
-                document.getElementById('view-dashboard').style.display = 'none';
-                document.getElementById('view-kpi').style.display = 'block';
+                switchPageView('kpi');
                 loadKPIData(); 
             } else {
-                document.getElementById('view-kpi').style.display = 'none';
-                document.getElementById('view-dashboard').style.display = 'block';
+                switchPageView('dashboard');
                 currentActivePage = view.toUpperCase();
                 loadData(); 
             }
@@ -112,6 +111,7 @@ function initApp() {
     document.getElementById('apply-filter').onclick = applyFilters;
     document.getElementById('logout-btn').onclick = () => location.reload();
 
+    // ປະກາດ Function ໃຫ້ໃຊ້ງານໄດ້ທົ່ວໄປ
     window.saveBranch = saveBranch;
     window.closeGoalModal = closeGoalModal;
     window.prepareEdit = prepareEdit;
@@ -124,6 +124,13 @@ function initApp() {
     window.exportToPDF = exportToPDF;
     window.exportToExcel = exportToExcel;
     window.resetChart = resetChart;
+    
+    // --- ເພີ່ມໃໝ່: ສຳລັບໜ້າ Upload History ---
+    window.switchPage = switchPage; 
+    window.deleteUpload = deleteUpload;
+    window.replaceFile = replaceFile;
+    window.handleReplaceFile = handleReplaceFile;
+    window.handleNewUpload = handleNewUpload;
 
     checkPermissions();
     loadData();
@@ -133,6 +140,22 @@ function initApp() {
         charts.donut?.resize();
         kpiChart?.resize();
     };
+}
+
+// 📌 ຟັງຊັນໃໝ່: ສຳລັບສະຫຼັບໜ້າຫຼັກ (Dashboard / KPI / Upload History)
+function switchPageView(page) {
+    document.getElementById('view-dashboard').style.display = page === 'dashboard' ? 'block' : 'none';
+    document.getElementById('view-kpi').style.display = page === 'kpi' ? 'block' : 'none';
+    const uploadHistoryPage = document.getElementById('page-upload-history');
+    if(uploadHistoryPage) uploadHistoryPage.style.display = page === 'upload-history' ? 'block' : 'none';
+}
+
+// 📌 ຟັງຊັນໃໝ່: ສຳລັບເມນູ Upload History ທີ່ຖືກເອີ້ນຈາກ HTML
+function switchPage(event, pageId) {
+    event.preventDefault();
+    document.querySelectorAll('.menu-item').forEach(b => b.classList.remove('active'));
+    event.currentTarget.classList.add('active');
+    switchPageView(pageId);
 }
 
 function checkPermissions() {
@@ -152,6 +175,7 @@ function checkPermissions() {
         lockButton('.btn-export.excel');
         lockButton('.btn-delete');
         lockButton('.btn-delete-small');
+        lockButton('.btn-delete-row'); // ລັອກປຸ່ມລຶບໃນໜ້າ History
     }
 }
 
@@ -184,7 +208,6 @@ async function loadData() {
             else { from += 1000; to += 1000; }
         }
         
-        // ຕັດຍ່າງວ່າງ (Space) ອອກກັນພາດ
         rawData = allData.map(d => ({
             ...d,
             branch_name: (d.branch_name || '').trim(),
@@ -215,7 +238,6 @@ async function fetchYearEnd2025() {
         let to = 999;
         let hasMore = true;
 
-        // ວົນຮອບດຶງເທື່ອລະ 1,000 ແຖວ ຈົນກວ່າຈະໝົດ
         while (hasMore) {
             const { data, error } = await _supabase
                 .from('bank_data')
@@ -230,7 +252,6 @@ async function fetchYearEnd2025() {
                 allRows = allRows.concat(data);
             }
 
-            // ຖ້າດຶງມາໄດ້ໜ້ອຍກວ່າ 1,000 ສະແດງວ່າໝົດແລ້ວ ໃຫ້ຢຸດ Loop
             if (!data || data.length < 1000) {
                 hasMore = false;
             } else {
@@ -244,10 +265,8 @@ async function fetchYearEnd2025() {
         yearEnd2025Data = {};
         const unique2025 = new Map();
         
-        // ຕັດບັນຊີທີ່ຊ້ຳກັນອອກ ເອົາແຕ່ອັນດຽວ
         allRows.forEach(item => unique2025.set(item.ascount_no, item));
         
-        // ບວກຍອດລວມແຍກຕາມສາຂາ
         unique2025.forEach(item => {
             if (!yearEnd2025Data[item.branch_name]) yearEnd2025Data[item.branch_name] = 0;
             yearEnd2025Data[item.branch_name] += (Number(item.closing_balance) || 0);
@@ -331,7 +350,7 @@ function updateUI(filteredData) {
 }
 
 // ==========================================
-// 4.1 Table Rendering (✅ ສະບັບສົມບູນ: ມີລູກສອນ ▲ ▼ ໃນທຸກຖັນປຽບທຽບ)
+// 4.1 Table Rendering (ແກ້ໄຂຍອດເປີດໃໝ່ ແລະ ສູດຄິດໄລ່)
 // ==========================================
 function renderMainTable(tableData) {
     const tbody = document.querySelector('#branch-table tbody');
@@ -347,9 +366,7 @@ function renderMainTable(tableData) {
 
     let TB=0, TP=0, TO=0, TC=0, TD25=0, TDP=0, TDO=0;
     
-    // ✅ ຟັງຊັນຈັດ Format ໃຫ້ມີລູກສອນ ແລະ ສີແຍກຊັດເຈນ
     const fmt = (v, isPercent = false, isPlan = false) => {
-        // ສຳລັບຖັນທຽບແຜນ (%) ຖ້າຮອດ 100% ໃຫ້ເປັນສີຂຽວ, ບໍ່ຮອດໃຫ້ເປັນສີເຫຼືອງ
         if (isPlan) {
             const color = v >= 100 ? '#10b981' : '#fbbf24';
             const arrow = v >= 100 ? '▲' : '▼';
@@ -359,7 +376,6 @@ function renderMainTable(tableData) {
                     </div>`;
         }
         
-        // ສຳລັບຖັນທຽບທົ່ວໄປ: ບວກ = ຂຽວ (▲), ລົບ = ແດງ (▼)
         const color = v >= 0 ? '#10b981' : '#ef4444';
         const arrow = v >= 0 ? '▲' : '▼';
         const formattedNum = v.toLocaleString(undefined, { 
@@ -387,26 +403,44 @@ function renderMainTable(tableData) {
 
         let sumO = 0, sumC = 0; 
         accMap.forEach(records => {
+            // 1. ຫາຍອດປັດຈຸບັນ (ປິດ) - ເອົາວັນທີໃໝ່ສຸດ
             records.sort((a, b) => b.date_key.localeCompare(a.date_key));
             sumC += (Number(records[0].closing_balance) || 0);
-            let accountOpen = 0;
-            for (let r of records) {
-                if (Number(r.opening_balance) > 0) {
-                    accountOpen = Number(r.opening_balance);
-                    break; 
+            
+            // 2. ຫາຍອດເປີດໃໝ່ (ແຍກເງື່ອນໄຂຕາມໜ້າ)
+            if (currentActivePage === 'PUPOM') {
+                // --- ສຳລັບໜ້າປູພົມ: ເອົາ "ຍອດເປີດ" ຈາກໄຟລ໌ອັບໂຫຼດຫຼ້າສຸດເລີຍ ---
+                let accountOpen = 0;
+                for (let r of records) {
+                    if (Number(r.opening_balance) > 0) {
+                        accountOpen = Number(r.opening_balance);
+                        break; 
+                    }
+                }
+                sumO += accountOpen;
+            } else {
+                // --- ສຳລັບໜ້າ ເບຍລາວ / ແຄມແປນ: ເອົາຍອດຈາກການອັບໂຫຼດຄັ້ງທຳອິດຂອງປີ ---
+                let records2026 = records.filter(r => !r.date_key.startsWith('2025'));
+                if (records2026.length > 0) {
+                    // ລຽງວັນທີຈາກເກົ່າໄປໃໝ່ ເພື່ອເອົາໃບບິນທຳອິດ
+                    records2026.sort((a, b) => a.date_key.localeCompare(b.date_key));
+                    const firstUpload = records2026[0];
+                    
+                    // ເອົາຍອດທີ່ໃຫຍ່ທີ່ສຸດລະຫວ່າງ opening ຫຼື closing ຂອງມື້ທຳອິດ
+                    sumO += Math.max(Number(firstUpload.opening_balance) || 0, Number(firstUpload.closing_balance) || 0);
                 }
             }
-            sumO += accountOpen;
         });
 
         let baselineVal = yearEnd2025Data[bName] || 0;
         if (baselineVal === 0 && set2025) baselineVal = set2025.balance_prev_year || 0;
 
-        // 🎯 ສູດຄິດໄລ່
+        // 🎯 ສູດຄິດໄລ່ຫຼັກ
         const d25 = sumC - baselineVal; 
         const dP = sumC - plan2026;     
-        let dO = (currentActivePage === 'BEERLAO' || currentActivePage === 'CAMPAIGN' || currentActivePage === 'CASHBACK') 
-                 ? baselineVal - sumC : sumC - sumO; 
+        
+        // 🎯 ປັບປຸງການທຽບຍອດເປີດໃໝ່ (ໃຫ້ໃຊ້ສູດດຽວກັນທັງໝົດແລ້ວ)
+        let dO = sumC - sumO; 
         
         let p25 = baselineVal !== 0 ? (d25 / baselineVal) * 100 : (sumC > 0 ? 100 : 0);
         let pP = plan2026 !== 0 ? (sumC / plan2026) * 100 : 0;
@@ -426,7 +460,6 @@ function renderMainTable(tableData) {
             <td align="center">${fmt(pP, true, true)}</td> </tr>`;
     }).join('');
 
-    // ... (ສ່ວນ Total Html ໃຫ້ໃຊ້ fmt ຄືກັນ)
     const totalHtml = `<tr style="background:#0f172a; font-weight:bold;">
         <td style="text-align:left; padding-left:20px;">ລວມທັງໝົດ</td>
         <td align="center" style="color:#ffffff;">${TB.toLocaleString()}</td>
@@ -609,12 +642,11 @@ function setQuickFilter(type) {
 }
 
 // ==========================================
-// 7. Chart Logic (✅ ແກ້ໄຂບັກຕົວເລກກາງວົງມົນຄ້າງ)
+// 7. Chart Logic
 // ==========================================
 function renderCharts(uniqueData) {
     if (!charts.area || !charts.donut) return;
 
-    // --- 1. ກຣາຟແທ່ງ (Area Chart) ---
     const branches = [...new Set(dynamicBranchSettings.map(s => s.branch_name))]; 
     const totals = branches.map(b => {
         const branchData = uniqueData.filter(d => d.branch_name === b);
@@ -653,13 +685,12 @@ function renderCharts(uniqueData) {
         }]
     });
 
-    // --- 2. ກຣາຟວົງມົນ (Donut Chart) ---
     let activeCount = 0, inactiveCount = 0, zeroCount = 0;
     uniqueData.forEach(d => {
         const open = Number(d.opening_balance) || 0;
         const close = Number(d.closing_balance) || 0;
         
-        if (close <= 0) zeroCount++; // ປັບໃຫ້ນັບຍອດ 0 ຫຼື ຕິດລົບ ເປັນບັນຊີສູນ
+        if (close <= 0) zeroCount++; 
         else if (open !== close) activeCount++; 
         else inactiveCount++;
     });
@@ -671,10 +702,8 @@ function renderCharts(uniqueData) {
         { value: zeroCount, name: 'ບັນຊີສູນ', itemStyle: { color: '#44d289ff' } }       
     ];
 
-    // 🔥 ຄຳສັ່ງນີ້ສຳຄັນຫຼາຍ! ລ້າງຄວາມຈຳເກົ່າຂອງກຣາຟຖິ້ມກ່ອນ ເພື່ອບໍ່ໃຫ້ມັນຄ້າງ
     charts.donut.clear();
 
-    // ຕັ້ງຄ່າແຕ້ມກຣາຟໃໝ່
     charts.donut.setOption({
         title: {
             text: totalAccounts.toLocaleString(),
@@ -700,18 +729,14 @@ function renderCharts(uniqueData) {
         }]
     });
 
-    // 🔥 ຟັງຊັນກົດປຸ່ມແລ້ວປ່ຽນຕົວເລກທັນທີ
     charts.donut.off('legendselectchanged'); 
     charts.donut.on('legendselectchanged', function(params) {
         let newTotal = 0;
-        // ອ່ານຄ່າໃໝ່ສະເພາະໂຕທີ່ຖືກເປີດ (ສີຂຽວ, ສີສົ້ມ)
         donutData.forEach(item => {
             if (params.selected[item.name]) {
                 newTotal += item.value;
             }
         });
-        
-        // ບັງຄັບໃຫ້ອັບເດດສະເພາະຕົວໜັງສືທາງກາງທັນທີ
         charts.donut.setOption({ 
             title: { text: newTotal.toLocaleString() } 
         });
@@ -719,7 +744,7 @@ function renderCharts(uniqueData) {
 }
 
 // ==========================================
-// 8. Upload & Export (✅ ແຍກຍອດ Opening / Closing ເດັດຂາດ)
+// 8. Upload & Export
 // ==========================================
 async function confirmUpload() {
     const fileInput = document.getElementById('excel-input');
@@ -757,20 +782,30 @@ async function confirmUpload() {
                     cleanRow[cleanKey] = row[key];
                 }
 
-                const accNo = String(
+                // --- ແກ້ໄຂ: ປັບປຸງການດຶງຊື່ສາຂາ (Auto Mapping) ---
+                let branchName = cleanRow['branchname'] || cleanRow['branch'] || row['ສາຂາ'] || 'ບໍ່ລະບຸ';
+                if (branchName.includes('ດອນໜູນ')) branchName = 'ສາຂານ້ອຍດອນໜູນ';
+                else if (branchName.includes('ໂພນໄຊ')) branchName = 'ສາຂານ້ອຍໂພນໄຊ';
+                else if (branchName.includes('ຊັງຈ້ຽງ')) branchName = 'ສາຂານ້ອຍຊັງຈ້ຽງ';
+                else if (branchName.includes('ໜອງໜ່ຽງ')) branchName = 'ສາຂານ້ອຍໜອງໜ່ຽງ';
+                else if (branchName.includes('ນະຄອນຫຼວງ')) branchName = 'ສາຂາພາກນະຄອນຫຼວງ';
+
+                // --- ແກ້ໄຂ: ປັບປຸງການດຶງເລກບັນຊີ ແລະ ສ້າງ Dummy ID ຖ້າບໍ່ມີ ---
+                let accNo = String(
                     cleanRow['accountno'] || cleanRow['ascountno'] || cleanRow['accno'] || 
-                    cleanRow['account'] || cleanRow['number'] || row['ເລກບັນຊີ'] || ''
+                    cleanRow['account'] || cleanRow['number'] || row['ເລກບັນຊີ'] || row['ເລກທີບັນຊີ'] || ''
                 ).trim();
 
-                if (!accNo) return;
+                // 🚨 ປ້ອງກັນການປັດຍອດຖິ້ມ ຖ້າບໍ່ມີເລກບັນຊີ
+                if (!accNo) {
+                    accNo = 'DUMMY_' + Math.floor(Math.random() * 10000000);
+                }
 
-                const branchName = cleanRow['branchname'] || cleanRow['branch'] || row['ສາຂາ'] || 'ບໍ່ລະບຸ';
                 const custName = cleanRow['customername'] || cleanRow['name'] || row['ຊື່ລູກຄ້າ'] || '';
 
                 let openVal = 0;
                 let closeVal = 0;
 
-                // ✅ 1. ກວດເບິ່ງກ່ອນວ່າ Excel ມີຖັນແຍກມາແລ້ວບໍ່
                 const hasOpenCol = 'openingbalance' in cleanRow || 'ຍອດເປີດ' in cleanRow;
                 const hasCloseCol = 'closingbalance' in cleanRow || 'ຍອດປິດ' in cleanRow;
 
@@ -778,7 +813,6 @@ async function confirmUpload() {
                     openVal = parseFloat(String(cleanRow['openingbalance'] || cleanRow['ຍອດເປີດ'] || '0').replace(/,/g, '')) || 0;
                     closeVal = parseFloat(String(cleanRow['closingbalance'] || cleanRow['ຍອດປິດ'] || '0').replace(/,/g, '')) || 0;
                 } else {
-                    // ✅ 2. ຖ້າບໍ່ມີແຍກ ໃຫ້ໃຊ້ປຸ່ມ Radio ເປັນຕົວຕັດສິນ ວ່າຈະໃຫ້ເຂົ້າຊ່ອງໃດ
                     let rawAmount = String(
                         cleanRow['balance'] || cleanRow['amount'] || cleanRow['total'] || 
                         cleanRow['ຍອດເງິນ'] || cleanRow['ຈຳນວນເງິນ'] || cleanRow['ຍອດຄົງເຫຼືອ'] || '0'
@@ -787,7 +821,7 @@ async function confirmUpload() {
 
                     if (uploadType === 'NEW') {
                         openVal = amountVal;
-                        closeVal = 0; // <--- ບໍ່ກັອບປີ້ໃສ່ຊ່ອງປິດແລ້ວ! ແຍກກັນຊັດເຈນ
+                        closeVal = 0; 
                     } else {
                         openVal = 0; 
                         closeVal = amountVal;
@@ -913,15 +947,39 @@ function updateRadarChart(dataArr) {
 }
 
 // ==========================================
-// 10. Utils (Export, Delete)
+// 10. Utils (Export, Delete, Upload UI)
 // ==========================================
+
+// --- ແກ້ໄຂ: ອັບເກຣດຟັງຊັນລຶບຂໍ້ມູນ (ລຶບຕາມວັນທີ ແລະ ຊື່ສາຂາ) ---
 async function deleteDataByDate() {
     const dateKey = document.getElementById('upload-date-select').value;
-    if (!dateKey) return alert("ກະລຸນາເລືອກ 'ວັນທີຂໍ້ມູນ' ທີ່ຕ້ອງການລົບກ່ອນ!");
-    if (!confirm(`⚠️ ຢືນຢັນລົບຂໍ້ມູນວັນທີ: ${dateKey}?`)) return;
-    const { error } = await _supabase.from('bank_data').delete().eq('date_key', dateKey).eq('campaign_type', currentActivePage);
-    if (error) alert("Error: " + error.message);
-    else { alert("ລົບຂໍ້ມູນສຳເລັດ!"); document.getElementById('upload-modal').style.display = 'none'; loadData(); }
+    const branchSelect = document.getElementById('branch-select').value; 
+    
+    if (!dateKey && branchSelect === 'all') {
+        return alert("⚠️ ກະລຸນາເລືອກ 'ວັນທີ' ໃນກ່ອງນີ້ ຫຼື ອອກໄປເລືອກ 'ສາຂາ' ຢູ່ໜ້າ Dashboard ກ່ອນຈຶ່ງກົດລຶບ!");
+    }
+
+    let confirmText = `⚠️ ຢືນຢັນການລຶບຂໍ້ມູນ`;
+    if(dateKey) confirmText += `\n- ວັນທີ: ${dateKey}`;
+    if(branchSelect !== 'all') confirmText += `\n- ສະເພາະສາຂາ: ${branchSelect}`;
+    confirmText += `\n(ລຶບແລ້ວບໍ່ສາມາດກູ້ຄືນໄດ້!)`;
+
+    if (!confirm(confirmText)) return;
+
+    let query = _supabase.from('bank_data').delete().eq('campaign_type', currentActivePage);
+    if (dateKey) query = query.eq('date_key', dateKey);
+    if (branchSelect !== 'all') query = query.eq('branch_name', branchSelect);
+
+    const { error } = await query;
+    
+    if (error) {
+        alert("Error: " + error.message);
+    } else { 
+        alert("✅ ລຶບຂໍ້ມູນສຳເລັດແລ້ວ!"); 
+        document.getElementById('upload-modal').style.display = 'none'; 
+        rawData = []; 
+        await loadData(); 
+    }
 }
 
 function exportToPDF() {
@@ -982,9 +1040,7 @@ function exportToPDF() {
     const tds = tableClone.querySelectorAll('td');
     tds.forEach(td => {
         td.style.borderBottom = '1px solid #334155';
-        if (!td.style.color && !td.getAttribute('style')?.includes('color')) {
-            td.style.color = '#ffffff';
-        }
+        if (!td.style.color) td.style.color = '#ffffff';
     });
 
     container.appendChild(tableClone);
@@ -1004,4 +1060,66 @@ function exportToExcel() {
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Report");
     XLSX.writeFile(workbook, `Report_${currentActivePage}.xlsx`);
+}
+
+// ----------------------------------------
+// ຈັດການໜ້າ Upload History 
+// ----------------------------------------
+let currentRowToReplace = null;
+let currentBranchToReplace = null;
+
+// --- ແກ້ໄຂ: ຟັງຊັນລຶບໄຟລ໌ອັບໂຫຼດ (ລຶບຂໍ້ມູນສາຂາອອກຈາກຖານຂໍ້ມູນແທ້) ---
+async function deleteUpload(rowId, branchName) {
+    if (confirm(`⚠️ ທ່ານຕ້ອງການລຶບຂໍ້ມູນທັງໝົດຂອງ "${branchName}" ອອກຈາກຖານຂໍ້ມູນແທ້ຫຼືບໍ່? (ລຶບແລ້ວກູ້ຄືນບໍ່ໄດ້)`)) {
+        
+        const { error } = await _supabase
+            .from('bank_data')
+            .delete()
+            .eq('branch_name', branchName)
+            .eq('campaign_type', currentActivePage); 
+
+        if (error) {
+            alert("ເກີດຂໍ້ຜິດພາດໃນການລຶບ: " + error.message);
+            return;
+        }
+
+        const row = document.getElementById(rowId);
+        if (row) row.remove();
+        
+        alert(`✅ ລຶບຂໍ້ມູນຂອງ "${branchName}" ອອກຈາກຖານຂໍ້ມູນສຳເລັດແລ້ວ!`);
+        rawData = [];
+        await loadData();
+    }
+}
+
+function replaceFile(rowId, branchName) {
+    currentRowToReplace = rowId;
+    currentBranchToReplace = branchName;
+    
+    if (confirm(`ທ່ານຕ້ອງການອັບໂຫຼດໄຟລ໌ໃໝ່ ເພື່ອໄປແທນທີ່ຂໍ້ມູນເກົ່າຂອງ "${branchName}" ແມ່ນບໍ່?`)) {
+        document.getElementById('replaceFileInput').click();
+    }
+}
+
+function handleReplaceFile(input) {
+    if (input.files && input.files[0]) {
+        const newFileName = input.files[0].name;
+        const row = document.getElementById(currentRowToReplace);
+        
+        row.cells[2].innerHTML = `<i class="fa-solid fa-file-excel" style="color: #10b981;"></i> <span style="color: #cbd5e1;">${newFileName}</span>`;
+        
+        const now = new Date();
+        const timeString = now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+        row.cells[0].innerHTML = `ມື້ນີ້ <br><small style="color: #94a3b8;">${timeString}</small>`;
+        
+        alert(`✅ ອັບໂຫຼດໄຟລ໌ "${newFileName}" ເຂົ້າໄປແທນທີ່ຂໍ້ມູນຂອງ "${currentBranchToReplace}" ສຳເລັດແລ້ວ!`);
+        input.value = ""; 
+    }
+}
+
+function handleNewUpload(input) {
+    if (input.files && input.files[0]) {
+        alert(`✅ ຮັບໄຟລ໌ "${input.files[0].name}" ເຂົ້າລະບົບແລ້ວ! (ລໍຖ້າການປະມວນຜົນເຂົ້າຕາຕະລາງ)`);
+        input.value = "";
+    }
 }
