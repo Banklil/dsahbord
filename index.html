@@ -3,10 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LDB BANK - DASHBOARD</title>
+    <title>LDB BANK - ENTERPRISE DASHBOARD</title>
     
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Lao:wght@300;400;500;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Lao:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -17,74 +16,69 @@
 </head>
 <body>
 
-    <div id="stars-container">
-        <div id='stars'></div>
-        <div id='stars2'></div>
-        <div id='stars3'></div>
+    <div id="loading-overlay">
+        <div class="loader-spinner"></div>
+        <div class="loader-text" id="loading-text">ກຳລັງປະມວນຜົນ...</div>
     </div>
 
     <div id="login-screen">
         <div class="login-container">
+            <div class="logo-mark">
+                <img src="WhatsApp Image 2025-09-08 at 14.17.30_2d75d6b9 4 (1).png" alt="LDB Logo" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'80\' height=\'80\' viewBox=\'0 0 80 80\'><rect width=\'80\' height=\'80\' fill=\'%230b1120\'/><text x=\'50%\' y=\'50%\' font-family=\'Arial\' font-size=\'20\' fill=\'%232563eb\' dominant-baseline=\'middle\' text-anchor=\'middle\'>LDB</text></svg>'">
+            </div>
             <div class="login-header">
-                <h1 class="titanium-title">LDB BANK</h1>
-                <p class="titanium-subtitle">SYSTEM DASHBOARD</p>
+                <h1>LDB BANK</h1>
+                <p>Enterprise Management Dashboard</p>
             </div>
             
             <div class="login-form">
                 <div class="input-group">
-                    <input type="text" id="user-auth" required>
                     <label>ຊື່ຜູ້ໃຊ້ (User ID)</label>
-                    <i class="fas fa-user input-icon"></i>
+                    <input type="text" id="user-auth" placeholder="Enter your ID" required>
                 </div>
                 <div class="input-group">
-                    <input type="password" id="pass-auth" required>
                     <label>ລະຫັດຜ່ານ (Password)</label>
-                    <i class="fas fa-lock input-icon"></i>
+                    <input type="password" id="pass-auth" placeholder="Enter password" required>
                 </div>
                 
-                <button id="login-btn">
-                    <span>ເຂົ້າສູ່ລະບົບ</span>
-                    <div class="btn-glow"></div>
-                </button>
-                
-                <p id="auth-error" style="display: none;"><i class="fas fa-exclamation-circle"></i> ຊື່ ຫຼື ລະຫັດຜ່ານບໍ່ຖືກຕ້ອງ!</p>
+                <button id="login-btn">ເຂົ້າສູ່ລະບົບ</button>
+                <p id="auth-error">⚠️ ຊື່ ຫຼື ລະຫັດຜ່ານບໍ່ຖືກຕ້ອງ!</p>
             </div>
-        </div>
-        <div class="login-footer">
-            <p>ພັດທະນາໂດຍ ຂະແໜງການຕະຫຼາດ ສາຂາພາກນະຄອນຫຼວງ</p>
+            <div class="login-footer">
+                &copy; 2026 LDB Bank. All rights reserved.<br>ພັດທະນາໂດຍ ຂະແໜງການຕະຫຼາດ ສາຂາພາກນະຄອນຫຼວງ
+            </div>
         </div>
     </div>
 
     <div id="dashboard-app" style="display: none;">
         
         <aside class="sidebar">
-            <div style="padding: 30px; text-align: center;">
-                <div class="logo">
-                    <img src="WhatsApp Image 2025-09-08 at 14.17.30_2d75d6b9 4 (1).png" alt="LDB Bank Logo" style="max-width: 100%; height: auto;">
-                </div>
+            <div class="sidebar-logo-container">
+                <img src="bb.png" alt="LDB Logo" onerror="this.style.display='none'">
+                <h2>lao DevelopmentBank</h2>
             </div>
             
-            <nav style="flex: 1; padding: 0 15px;">
+            <nav style="flex: 1; padding: 0 10px;">
                 <button class="menu-item active" data-view="PUPOM">
-                    <i class="fas fa-chart-line"></i> <span>ຂໍ້ມູນປູພົມ</span>
+                    <span>ຂໍ້ມູນປູພົມ</span>
                 </button>
                 <button class="menu-item" data-view="BEERLAO">
-                    <i class="fas fa-beer"></i> <span>ຂໍ້ມູນເບຍລາວ</span>
+                    <span>ຂໍ້ມູນເບຍລາວ</span>
                 </button>
                 <button class="menu-item" data-view="CAMPAIGN">
-                    <i class="fas fa-users"></i> <span>ລູກຄ້າແຄມແປນ</span>
+                    <span>ລູກຄ້າແຄມແປນ</span>
                 </button>
                 <button class="menu-item" data-view="KPI">
-                    <i class="fas fa-trophy"></i> <span>KPI ບຸກຄົນ</span>
+                    <span>KPI ບຸກຄົນ</span>
                 </button>
             </nav>
 
-            <div style="padding: 20px; border-top: 1px solid rgba(255,255,255,0.1);">
+            <div class="sidebar-footer">
                 <button id="upload-trigger" class="sidebar-btn upload-btn">
-                    <i class="fas fa-upload"></i> ອັບໂຫຼດ Data
+                    ອັບໂຫຼດຂໍ້ມູນ
                 </button>
                 <button id="logout-btn" class="sidebar-btn logout-btn">
-                    <i class="fas fa-sign-out-alt"></i> ອອກຈາກລະບົບ
+                    ອອກຈາກລະບົບ
                 </button>
             </div>
         </aside>
@@ -92,223 +86,246 @@
         <main class="content-area">
             
             <div id="view-dashboard">
-                <header style="margin-bottom: 30px;">
-                    <h1 id="page-title" style="margin: 0; font-size: 1.8rem; color: white;">Dashboard ປູພົມ</h1>
-                    <p style="color: #94a3b8; margin-top: 5px;">ຕິດຕາມຂໍ້ມູນ ແລະ ວິເຄາະເປົ້າໝາຍ 2026</p>
+                <header class="page-header">
+                    <h1 id="page-title">Dashboard ປູພົມ</h1>
+                    <p>ພາບລວມການເຄື່ອນໄຫວ ແລະ ເປົ້າໝາຍປະຈຳປີ</p>
                 </header>
 
-                <section class="filter-wrapper">
+                <div class="card filter-wrapper">
                     <div class="filter-group">
-                        <label style="color:#94a3b8; font-size:0.85rem;">ທາງລັດ</label>
-                        <div class="quick-actions">
-                            <button onclick="setQuickFilter('week')" class="btn-shortcut-glass">ອາທິດນີ້</button>
-                            <button onclick="setQuickFilter('month')" class="btn-shortcut-glass">ເດືອນນີ້</button>
-                            <button onclick="setQuickFilter('year')" class="btn-shortcut-glass">ປີນີ້</button>
+                        <label>ທາງລັດ (Quick Filter)</label>
+                        <div class="dropdown">
+                            <button class="btn btn-outline" style="min-width: 140px; justify-content: space-between;">
+                                <span>ໄລຍະເວລາ</span>
+                                <span style="font-size: 0.7rem;">▼</span>
+                            </button>
+                            <div class="dropdown-content">
+                                <button onclick="setQuickFilter('week'); document.activeElement.blur();">ອາທິດນີ້ (This Week)</button>
+                                <button onclick="setQuickFilter('month'); document.activeElement.blur();">ເດືອນນີ້ (This Month)</button>
+                                <button onclick="setQuickFilter('year'); document.activeElement.blur();">ປີນີ້ (This Year)</button>
+                            </div>
                         </div>
                     </div>
                     
-                    <div class="filter-group" style="flex: 1; min-width: 200px;">
-                        <label style="color:#94a3b8; font-size:0.85rem;">ເລືອກສາຂາ</label>
-                        <select id="branch-select" style="width:100%;">
-                            <option value="all">ທັງໝົດທຸກສາຂາ</option>
+                    <div class="filter-group grow">
+                        <label>ສາຂາ (Branch)</label>
+                        <select id="branch-select">
+                            <option value="all">ທັງໝົດ (All Branches)</option>
                         </select>
                     </div>
                     
                     <div class="filter-group">
-                        <label style="color:#94a3b8; font-size:0.85rem;">ເລີ່ມວັນທີ</label>
+                        <label>ເລີ່ມວັນທີ (From)</label>
                         <input type="date" id="start-date">
                     </div>
                     
                     <div class="filter-group">
-                        <label style="color:#94a3b8; font-size:0.85rem;">ຫາວັນທີ</label>
+                        <label>ຫາວັນທີ (To)</label>
                         <input type="date" id="end-date">
                     </div>
 
                     <div class="action-buttons">
-                        <button id="apply-filter" class="btn-primary-glass">
-                            <i class="fas fa-search"></i> ຄົ້ນຫາ
-                        </button>
-                        <button onclick="clearFilters()" class="btn-danger-glass">
-                            <i class="fas fa-sync-alt"></i> ລ້າງຄ່າ
-                        </button>
-                        <button id="manage-branches-btn" class="btn-primary-glass">
-                            <i class="fas fa-cog"></i> ຈັດການສາຂາ
-                        </button>
+                        <button id="apply-filter" class="btn btn-primary">ຄົ້ນຫາ</button>
+                        <button onclick="clearFilters()" class="btn btn-secondary">ລ້າງຄ່າ</button>
+                        <button id="manage-branches-btn" class="btn btn-outline">ຕັ້ງຄ່າສາຂາ</button>
                     </div>
-                </section>
+                </div>
 
                 <section class="stats-grid">
-                    <div class="stat-card">
-                        <p style="color: #94a3b8; margin: 0; font-size: 0.9rem;">ຍອດເງິນລວມປັດຈຸບັນ</p>
-                        <h2 id="total-amount" style="margin: 15px 0; font-size: 2rem; color: white;">0</h2>
-                        <span style="color: #10b981; font-size: 0.85rem;">+ ຈາກເປົ້າໝາຍ</span>
+                    <div class="card stat-card">
+                        <p>ຍອດເງິນລວມປັດຈຸບັນ (Total Balance)</p>
+                        <h2 id="total-amount">0</h2>
+                        <span class="text-success" style="font-size: 0.85rem; font-weight: 500;">▲ ຍອດລວມທັງໝົດ</span>
                     </div>
-                    <div class="stat-card">
-                        <p style="color: #94a3b8; margin: 0; font-size: 0.9rem;">ບັນລຸແຜນທຽບເປົ້າ (%)</p>
-                        <h2 id="achievement-pct" style="color: #10b981; margin: 15px 0; font-size: 2rem;">0%</h2>
-                        <div class="progress-bar-bg" style="background: rgba(255,255,255,0.1); height: 10px; border-radius: 5px; overflow: hidden;">
-                            <div id="progress-fill" style="background: #10b981; height: 100%; width: 0%; transition: 1s;"></div>
+                    <div class="card stat-card">
+                        <p>ບັນລຸແຜນທຽບເປົ້າ (Achievement %)</p>
+                        <h2 id="achievement-pct" class="text-primary">0%</h2>
+                        <div class="progress-bar-bg">
+                            <div id="progress-fill" class="progress-bar-fill"></div>
                         </div>
                     </div>
                 </section>
 
                 <section class="charts-main-container">
-                    <div class="chart-box">
-                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
-                            <h3 style="margin:0; font-size:1.1rem; color:white;">ແນວໂນ້ມຍອດເງິນຂຶ້ນລົງ (Trend)</h3>
-                            <button class="btn-text-titanium" onclick="resetChart()">
-                                <i class="fas fa-compress-arrows-alt"></i> ມຸມມອງຫຼັກ
+                    <div class="card chart-full-width">
+                        <div class="chart-header">
+                            <h3>ແນວໂນ້ມຍອດເງິນຕາມວັນທີ (Timeline Trend)</h3>
+                            <button class="btn btn-outline" style="height: 30px; padding: 0 10px; font-size: 0.8rem;" onclick="resetChart()">
+                                ມຸມມອງຫຼັກ
                             </button>
                         </div>
                         <div id="largeAreaChart" style="width: 100%; height: 350px;"></div>
                     </div>
-                    <div class="chart-box">
-                        <h3 style="margin-top:0; font-size:1.1rem; color:white;">ສະຖານະບັນຊີທັງໝົດ</h3>
-                        <div id="donutChartDiv" style="width: 100%; height: 350px;"></div>
+                    <div class="card">
+                        <div class="chart-header">
+                            <h3>ສະຖານະບັນຊີ (Account Status)</h3>
+                        </div>
+                        <div id="donutChartDiv" style="width: 100%; height: 300px;"></div>
+                    </div>
+                    <div class="card">
+                        <div class="chart-header">
+                            <h3>ປຽບທຽບເປົ້າໝາຍ (Target vs Actual)</h3>
+                        </div>
+                        <div id="barChartDiv" style="width: 100%; height: 300px;"></div>
                     </div>
                 </section>
 
-                <section class="table-wrapper">
+                <div class="card">
                     <div class="table-header">
                         <h3 id="table-section-title">ລາຍລະອຽດຂໍ້ມູນລາຍສາຂາ</h3>
-                        <div class="export-actions" style="display: flex; gap: 10px;">
-                            <button onclick="exportToPDF()" class="btn-export pdf">
-                                <i class="fas fa-file-pdf"></i> PDF
-                            </button>
-                            <button onclick="exportToExcel()" class="btn-export excel">
-                                <i class="fas fa-file-excel"></i> Excel
-                            </button>
+                        <div class="action-buttons">
+                            <button onclick="exportToPDF()" class="btn btn-outline"><span class="text-danger">PDF</span></button>
+                            <button onclick="exportToExcel()" class="btn btn-outline"><span class="text-success">Excel</span></button>
                         </div>
                     </div>
-                    <div id="table-content-area" style="overflow-x: auto;">
+                    <div class="table-responsive">
                         <table id="branch-table">
                             <thead></thead>
-                            <tbody></tbody>
+                            <tbody id="table-body"></tbody>
                         </table>
                     </div>
-                </section>
+                </div>
             </div>
 
             <div id="view-kpi" style="display: none;">
-                <header style="margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center;">
+                <header class="page-header" style="display: flex; justify-content: space-between; align-items: flex-end;">
                     <div>
-                        <h1 style="margin: 0; font-size: 1.8rem; color: white;">KPI ບຸກຄົນ (ການຕະຫຼາດ)</h1>
-                        <p style="color: #94a3b8; margin-top: 5px;">ຕິດຕາມຜົນງານປະຈຳເດືອນ</p>
+                        <h1 id="page-title">KPI ບຸກຄົນ</h1>
+                        <p>ຕິດຕາມຜົນງານປະຈຳເດືອນ (Marketing Performance)</p>
                     </div>
                     <div style="display: flex; gap: 10px;">
-                        <select id="kpi-employee-select" style="padding:10px; background:#1e293b; color:white; border:1px solid #334155; border-radius:8px;">
+                        <select id="kpi-employee-select" style="height: 40px; background: var(--bg-surface); border: 1px solid var(--border-strong); color: var(--text-main); border-radius: var(--radius-md); padding: 0 10px;">
                             <option value="ນາງ ສຸດາ">ນາງ ສຸດາ</option>
                             <option value="ທ້າວ ສົມຊາຍ">ທ້າວ ສົມຊາຍ</option>
                         </select>
-                        <input type="month" id="kpi-month-select" value="2026-02" style="padding:10px; background:#1e293b; color:white; border:1px solid #334155; border-radius:8px;">
-                        <button onclick="loadKPIData()" class="btn-primary-glass">ເບິ່ງຂໍ້ມູນ</button>
+                        <input type="month" id="kpi-month-select" value="2026-02" style="height: 40px; background: var(--bg-surface); border: 1px solid var(--border-strong); color: var(--text-main); border-radius: var(--radius-md); padding: 0 10px;">
+                        <button onclick="loadKPIData()" class="btn btn-primary">ດຶງຂໍ້ມູນ</button>
                     </div>
                 </header>
                 
                 <section class="stats-grid">
-                    <div class="stat-card" style="border-left: 5px solid #3b82f6;">
-                        <p style="color: #94a3b8; margin: 0;">ຄະແນນລວມ (Total Score)</p>
-                        <h2 id="kpi-total-score" style="margin: 15px 0; font-size: 2.5rem; color: #3b82f6;">0%</h2>
-                        <span style="color: #94a3b8;">ຈາກ 100%</span>
+                    <div class="card stat-card" style="border-top: 3px solid var(--primary);">
+                        <p>ຄະແນນລວມ (Total Score)</p>
+                        <h2 id="kpi-total-score" class="text-primary">0%</h2>
+                        <span class="text-muted" style="font-size: 0.85rem;">ຈາກ 100%</span>
                     </div>
-                    <div class="stat-card">
-                        <p style="color: #94a3b8; margin: 0;">ສະຖານະຜົນງານ</p>
-                        <h2 id="kpi-status" style="margin: 15px 0; font-size: 2rem; color:white;">-</h2>
+                    <div class="card stat-card">
+                        <p>ສະຖານະຜົນງານ (Status)</p>
+                        <h2 id="kpi-status">-</h2>
                     </div>
                 </section>
 
-                <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 20px;">
-                    <div class="table-wrapper" style="padding: 20px; border-radius: 12px;">
-                        <h3 style="margin-top: 0; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 15px; color:white;">ລາຍລະອຽດຕົວຊີ້ວັດ (KPIs)</h3>
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th style="text-align: left;">ຫົວຂໍ້ KPI</th>
-                                    <th style="text-align: right;">ເປົ້າໝາຍ</th>
-                                    <th style="text-align: right;">ປະຕິບັດໄດ້</th>
-                                    <th style="text-align: center;">% ສຳເລັດ</th>
-                                    <th style="text-align: center;">ຄະແນນ</th>
-                                </tr>
-                            </thead>
-                            <tbody id="kpi-table-body"></tbody>
-                        </table>
+                <div class="charts-main-container">
+                    <div class="card">
+                        <div class="chart-header">
+                            <h3>ລາຍລະອຽດຕົວຊີ້ວັດ (KPI Details)</h3>
+                        </div>
+                        <div class="table-responsive">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>ຫົວຂໍ້ KPI</th>
+                                        <th style="text-align: right;">ເປົ້າໝາຍ</th>
+                                        <th style="text-align: right;">ປະຕິບັດໄດ້</th>
+                                        <th style="text-align: center;">% ສຳເລັດ</th>
+                                        <th style="text-align: center;">ຄະແນນ</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="kpi-table-body"></tbody>
+                            </table>
+                        </div>
                     </div>
-                    <div class="chart-box" style="height: auto; min-height: 400px;">
-                        <h3 style="margin-top: 0; color:white;">ພາບລວມຜົນງານ</h3>
-                        <div id="kpiRadarChart" style="width: 100%; height: 350px;"></div>
+                    <div class="card">
+                        <div class="chart-header">
+                            <h3>ພາບລວມ (Radar View)</h3>
+                        </div>
+                        <div id="kpiRadarChart" style="width: 100%; height: 300px;"></div>
                     </div>
                 </div>
             </div>
-            
+
         </main>
     </div>
 
-<div id="upload-modal" class="modal">
+    <div id="upload-modal" class="modal">
         <div class="modal-content">
-            <span id="close-modal" class="close-btn">&times;</span>
-            <h2 style="margin-top:0; color:white;">ອັບໂຫຼດຂໍ້ມູນ Excel</h2>
+            <div class="modal-header">
+                <h2>ນຳເຂົ້າຂໍ້ມູນ (Upload Data)</h2>
+                <span id="close-modal" class="close-btn">&times;</span>
+            </div>
             
-            <div class="drop-zone" onclick="document.getElementById('excel-input').click()" style="border: 2px dashed rgba(255,255,255,0.3); padding:30px; text-align:center; cursor:pointer; margin:20px 0; border-radius: 12px;">
-                <p id="file-name-display" style="margin:0; color: #94a3b8;">ກົດເພື່ອເລືອກໄຟລ໌ ຫຼື ລາກໄຟລ໌ມາວາງທີ່ນີ້</p>
+            <div class="drop-zone" onclick="document.getElementById('excel-input').click()">
+                <span style="font-size: 2.5rem; margin-bottom: 10px; display: block;">📄</span>
+                <p id="file-name-display" style="margin:0; font-weight: 500;">ກົດເພື່ອເລືອກໄຟລ໌ ຫຼື ລາກໄຟລ໌ Excel ມາວາງທີ່ນີ້</p>
+                <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 5px;">ຮອງຮັບສະເພາະໄຟລ໌ .xlsx, .xls</p>
             </div>
             <input type="file" id="excel-input" hidden accept=".xlsx, .xls">
 
-            <div class="upload-options" style="display:flex; gap:15px; margin-bottom:15px; justify-content:center;">
-                <label style="color:#cbd5e1; cursor:pointer; display:flex; align-items:center; gap:5px;">
-                    <input type="radio" name="uploadType" value="UPDATE" checked style="width:auto; height:auto;"> 
-                    ອັບເດດຍອດເງິນ (Closing)
-                </label>
-                <label style="color:#fbbf24; cursor:pointer; display:flex; align-items:center; gap:5px;">
-                    <input type="radio" name="uploadType" value="NEW" style="width:auto; height:auto;"> 
-                    ເພີ່ມບັນຊີໃໝ່ (Opening)
-                </label>
+            <div class="upload-type-container" style="margin-top: 20px;">
+                <div class="radio-card">
+                    <input type="radio" name="uploadType" id="upload-update" value="UPDATE" checked>
+                    <label for="upload-update">
+                        <span style="font-size: 1.5rem; margin-bottom: 8px;">🔄</span>
+                        ອັບເດດຍອດເງິນ (Closing)
+                    </label>
+                </div>
+                <div class="radio-card">
+                    <input type="radio" name="uploadType" id="upload-new" value="NEW">
+                    <label for="upload-new">
+                        <span style="font-size: 1.5rem; margin-bottom: 8px;">➕</span>
+                        ເພີ່ມບັນຊີໃໝ່ (Opening)
+                    </label>
+                </div>
             </div>
 
-            <div class="filter-group" style="margin-bottom:20px;">
-                <label style="color:#cbd5e1;">ວັນທີຂໍ້ມູນ:</label>
-                <input type="date" id="upload-date-select" style="width:100%;">
+            <div class="filter-group" style="margin: 20px 0;">
+                <label>ເລືອກວັນທີຂອງຂໍ້ມູນ (Data Date)</label>
+                <input type="date" id="upload-date-select">
             </div>
 
-            <div style="display: flex; gap: 10px;">
-                <button id="start-upload-btn" class="btn-primary-glass" style="flex: 1; justify-content: center;">ຢືນຢັນ</button>
-                <button onclick="deleteDataByDate()" class="btn-danger-glass" style="flex: 1; justify-content: center;">ລົບຂໍ້ມູນ</button>
+            <div style="display: flex; gap: 10px; margin-top: 25px;">
+                <button id="start-upload-btn" class="btn btn-primary" style="flex: 2;">ຢືນຢັນການນຳເຂົ້າ</button>
+                <button onclick="deleteDataByDate()" class="btn btn-outline text-danger" style="flex: 1;">ລຶບຂໍ້ມູນ</button>
             </div>
         </div>
     </div>
 
     <div id="goal-modal" class="modal">
         <div class="modal-content goal-modal-wide">
-            <span class="close-btn" onclick="closeGoalModal()">&times;</span>
-            <div class="goal-form-header" style="color:white; margin-bottom:20px; font-size:1.2rem;">
-                <i class="fas fa-cog"></i> ຈັດການສາຂາ ແລະ ເປົ້າໝາຍ
+            <div class="modal-header">
+                <h2>ຕັ້ງຄ່າສາຂາ ແລະ ເປົ້າໝາຍ</h2>
+                <span class="close-btn" onclick="closeGoalModal()">&times;</span>
             </div>
-            <div class="goal-inputs-grid" style="display: grid; grid-template-columns: 2fr 1fr 1.5fr auto; gap: 15px; align-items: end; margin-bottom: 20px;">
-                <div class="input-box">
-                    <label style="color:#94a3b8; font-size: 0.85rem;">ຊື່ສາຂາ</label>
-                    <input type="text" id="branch-name" style="width:100%;">
+            
+            <div class="goal-inputs-grid">
+                <div class="filter-group">
+                    <label>ຊື່ສາຂາ</label>
+                    <input type="text" id="branch-name" placeholder="ປ້ອນຊື່ສາຂາ">
                 </div>
-                <div class="input-box">
-                    <label style="color:#94a3b8; font-size: 0.85rem;">ປີ</label>
-                    <select id="select-year" onchange="updateAmountInput()" style="width:100%;">
+                <div class="filter-group">
+                    <label>ປີ</label>
+                    <select id="select-year" onchange="updateAmountInput()">
+                        <option value="2024">2024</option>
                         <option value="2025">2025</option>
                         <option value="2026" selected>2026</option>
+                        <option value="2027">2027</option>
+                        <option value="2028">2028</option>
+                        <option value="2029">2029</option>
+                        <option value="2030">2030</option>
                     </select>
                 </div>
-                <div class="input-box">
-                    <label style="color:#94a3b8; font-size: 0.85rem;">ຈຳນວນເງິນ</label> 
-                    <input type="number" id="input-amount" style="width:100%;">
+                <div class="filter-group">
+                    <label>ເປົ້າໝາຍ (Target Amount)</label> 
+                    <input type="number" id="input-amount" placeholder="0.00">
                 </div>
-                <button class="btn-primary-glass" onclick="saveBranch()">ບັນທຶກ</button>
+                <button class="btn btn-primary" onclick="saveBranch()">ບັນທຶກ</button>
             </div>
-            <div class="table-wrapper" style="max-height: 400px; overflow-y: auto;">
+            
+            <div class="table-responsive" style="max-height: 350px;">
                 <table>
                     <thead>
                         <tr>
-                            <th style="text-align:left;">ສາຂາ</th>
-                            <th style="text-align:center;">ເປົ້າ 2025</th>
-                            <th style="text-align:center;">ເປົ້າ 2026</th>
-                            <th style="text-align:center;">ຈັດການ</th>
-                        </tr>
+                            </tr>
                     </thead>
                     <tbody id="goal-table-body"></tbody>
                 </table>
@@ -317,8 +334,5 @@
     </div>
 
     <script src="dashbord.js"></script>
-
 </body>
-
 </html>
-
