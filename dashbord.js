@@ -604,7 +604,7 @@ async function deleteDataByDate() {
     if (error) alert("Error: " + error.message); else { alert("✅ ລຶບສຳເລັດ!"); document.getElementById('upload-modal').style.display = 'none'; rawData = []; await loadData(); }
 }
 
-// ຟັງຊັນ Export PDF ແບບດາວໂຫຼດໂດຍກົງ (ບໍ່ມີໜ້າ Print ຂຶ້ນກວນ) + ເຫັນຕົວໜັງສືຄົບຖ້ວນ
+// ຟັງຊັນ Export PDF ທີ່ແກ້ບັນຫາໜ້າຈໍດຳ ແລະ ຕົວໜັງສືຫາຍ 100%
 function exportToPDF() {
     const tableCard = document.querySelector('#branch-table').closest('.card');
     if (!tableCard) return alert("ບໍ່ພົບຂໍ້ມູນທີ່ຈະດາວໂຫຼດ!");
@@ -626,53 +626,75 @@ function exportToPDF() {
     const originalTitle = headerTitle ? headerTitle.innerText : '';
     if (headerTitle) {
         headerTitle.innerText = `ລາຍລະອຽດຂໍ້ມູນ ${pdfTitle} (ວັນທີ: ${today})`;
-        headerTitle.style.color = '#3b82f6';
     }
 
-    // 3. ບັງຄັບສີພື້ນຫຼັງ ແລະ ສີຕົວໜັງສືແບບ Inline (ສຳຄັນຫຼາຍສຳລັບແກ້ບັນຫາໜ້າຈໍດຳ/ຕົວໜັງສືຫາຍ)
-    const originalBg = tableCard.style.backgroundColor;
-    const originalColor = tableCard.style.color;
-    tableCard.style.backgroundColor = '#111827';
-    tableCard.style.color = '#ffffff';
+    // 3. ບັງຄັບສີ Inline ໃຫ້ທຸກ Text Elements ທີ່ຢູ່ພາຍໃນ Card ເພື່ອປ້ອງກັນ html2canvas ເບິ່ງບໍ່ເຫັນສີ CSS Variables
+    const allTextElements = tableCard.querySelectorAll('th, td, h3, span, p, div');
+    const originalStyles = [];
+
+    allTextElements.forEach((el) => {
+        // ເກັບຄ່າສີເກົ່າໄວ້
+        originalStyles.push({
+            el: el,
+            color: el.style.color,
+            backgroundColor: el.style.backgroundColor
+        });
+
+        // ຖ້າບໍ່ມີການກຳນົດສີແບບ Inline ໄວ້ (ຫຼືໃຊ້ CSS var) ໃຫ້ບັງຄັບເປັນສີຂາວແຈ້ງໆ
+        if (!el.style.color || el.style.color === '' || el.style.color.includes('var')) {
+            el.style.color = '#ffffff'; 
+        }
+        
+        // ບັງຄັບສີພື້ນຫຼັງໃຫ້ຫົວຕາຕະລາງ
+        if (el.tagName === 'TH') {
+            el.style.backgroundColor = '#1f2937';
+        }
+    });
+
+    // ບັງຄັບສີພື້ນຫຼັງ Card ເປັນສີດຳ
+    const originalCardBg = tableCard.style.backgroundColor;
+    tableCard.style.backgroundColor = '#111827'; 
     
-    // ປົດລັອກ Scroll
+    // ປົດລັອກ Scroll ບໍ່ໃຫ້ມັນຕັດຂອບ
     const responsiveDiv = tableCard.querySelector('.table-responsive');
     const originalOverflow = responsiveDiv ? responsiveDiv.style.overflowX : '';
     if (responsiveDiv) responsiveDiv.style.overflowX = 'visible';
 
-    // ຕັ້ງຄ່າ html2pdf ໂດຍໃຊ້ສີດຳ (#111827) ເປັນພື້ນຫຼັງ
+    // ຕັ້ງຄ່າ html2pdf
     const opt = { 
         margin:       0.3,
         filename:     `${pdfTitle.replace(/\s+/g, '_')}_${today}.pdf`,
         image:        { type: 'jpeg', quality: 1.0 },
-        html2canvas:  { scale: 2, useCORS: true, backgroundColor: '#111827' }, 
+        html2canvas:  { scale: 2, useCORS: true, backgroundColor: '#111827', logging: false }, 
         jsPDF:        { unit: 'in', format: 'a3', orientation: 'landscape' }
     };
 
-    // ສັ່ງໃຫ້ html2pdf ຖ່າຍພາບຈາກຕາຕະລາງເທິງໜ້າຈໍໂດຍກົງ (ແລ້ວດາວໂຫຼດ)
+    // ສັ່ງໃຫ້ html2pdf ຖ່າຍພາບຈາກໜ້າຈໍແທ້ໆ
     html2pdf().set(opt).from(tableCard).save().then(() => {
-        // ກູ້ຄືນສະພາບເດີມຫຼັງໂຫຼດສຳເລັດ
+        // ກູ້ຄືນສະພາບເດີມ
         if (actionBtns) actionBtns.style.display = 'flex';
-        if (headerTitle) {
-            headerTitle.innerText = originalTitle;
-            headerTitle.style.color = '';
-        }
-        tableCard.style.backgroundColor = originalBg;
-        tableCard.style.color = originalColor;
+        if (headerTitle) headerTitle.innerText = originalTitle;
         if (responsiveDiv) responsiveDiv.style.overflowX = originalOverflow;
+        tableCard.style.backgroundColor = originalCardBg;
+
+        originalStyles.forEach(item => {
+            item.el.style.color = item.color;
+            item.el.style.backgroundColor = item.backgroundColor;
+        });
         
         hideLoading();
     }).catch(err => {
         console.error(err);
         // ກູ້ຄືນສະພາບເດີມເຖິງຈະມີ Error ກໍຕາມ
         if (actionBtns) actionBtns.style.display = 'flex';
-        if (headerTitle) {
-            headerTitle.innerText = originalTitle;
-            headerTitle.style.color = '';
-        }
-        tableCard.style.backgroundColor = originalBg;
-        tableCard.style.color = originalColor;
+        if (headerTitle) headerTitle.innerText = originalTitle;
         if (responsiveDiv) responsiveDiv.style.overflowX = originalOverflow;
+        tableCard.style.backgroundColor = originalCardBg;
+
+        originalStyles.forEach(item => {
+            item.el.style.color = item.color;
+            item.el.style.backgroundColor = item.backgroundColor;
+        });
         
         hideLoading();
         alert("ເກີດຂໍ້ຜິດພາດໃນການສ້າງ PDF: " + err.message);
