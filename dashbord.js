@@ -61,7 +61,13 @@ function performLogin() {
 
 function showLoading(text = 'ກຳລັງປະມວນຜົນ...') {
     const loader = document.getElementById('loading-overlay');
-    if(loader) { loader.style.display = 'flex'; void loader.offsetWidth; loader.style.opacity = '1'; }
+    if(loader) { 
+        const txt = document.getElementById('loading-text');
+        if(txt) txt.innerText = text;
+        loader.style.display = 'flex'; 
+        void loader.offsetWidth; 
+        loader.style.opacity = '1'; 
+    }
 }
 
 function hideLoading() {
@@ -208,17 +214,18 @@ async function fetchYearEnd2025() {
 function updateTableHeader() {
     const thead = document.querySelector('#branch-table thead');
     if (!thead) return;
+    // ບັງຄັບໃສ່ສີເຫຼືອງທອງ ແລະ ພື້ນຫຼັງໃຫ້ຫົວຕາຕະລາງ ເພື່ອໃຫ້ html2canvas ອ່ານໄດ້ 100%
     thead.innerHTML = `<tr>
-        <th style="color:#94a3b8;">ສາຂາ</th>
-        <th style="text-align:right; color:#94a3b8;">ຍອດຍົກມາ</th>
-        <th style="text-align:right; color:#94a3b8;">ແຜນປີ 2026</th>
-        <th style="text-align:right; color:#f59e0b;">ຍອດເປີດໃໝ່</th>
-        <th style="text-align:right; color:#2563eb;">ປະຕິບັດໄດ້</th>
-        <th style="text-align:center; color:#94a3b8;">ທຽບ 2025</th>
-        <th style="text-align:center; color:#94a3b8;">ທຽບແຜນ</th>
-        <th style="text-align:center; color:#94a3b8;">ທຽບຍອດເປີດໃໝ່</th>
-        <th style="text-align:center; color:#94a3b8;">% ທຽບ 2025</th>
-        <th style="text-align:center; color:#94a3b8;">% ບັນລຸ</th>
+        <th style="color:#fbbf24; background-color:#1e293b; padding:15px; border-bottom:1px solid #334155; text-align:left;">ສາຂາ</th>
+        <th style="color:#fbbf24; background-color:#1e293b; padding:15px; border-bottom:1px solid #334155; text-align:right;">ຍອດຍົກມາ</th>
+        <th style="color:#fbbf24; background-color:#1e293b; padding:15px; border-bottom:1px solid #334155; text-align:right;">ແຜນປີ 2026</th>
+        <th style="color:#fbbf24; background-color:#1e293b; padding:15px; border-bottom:1px solid #334155; text-align:right;">ຍອດເງິນເປີດໃໝ່</th>
+        <th style="color:#fbbf24; background-color:#1e293b; padding:15px; border-bottom:1px solid #334155; text-align:right;">ປະຕິບັດ</th>
+        <th style="color:#fbbf24; background-color:#1e293b; padding:15px; border-bottom:1px solid #334155; text-align:center;">ທຽບປີ2025</th>
+        <th style="color:#fbbf24; background-color:#1e293b; padding:15px; border-bottom:1px solid #334155; text-align:center;">ທຽບແຜນປີ2026</th>
+        <th style="color:#fbbf24; background-color:#1e293b; padding:15px; border-bottom:1px solid #334155; text-align:center;">ທຽບຍອດເປີດໃໝ່</th>
+        <th style="color:#fbbf24; background-color:#1e293b; padding:15px; border-bottom:1px solid #334155; text-align:center;">%ທຽບປີ2025</th>
+        <th style="color:#fbbf24; background-color:#1e293b; padding:15px; border-bottom:1px solid #334155; text-align:center;">%ທຽບແຜນປີ2026</th>
     </tr>`;
 }
 
@@ -273,13 +280,10 @@ function renderMainTable(tableData) {
 
     let TB=0, TP=0, TO=0, TC=0, TD25=0, TDP=0, TDO=0;
     
+    // ແກ້ໄຂເລື່ອງເຄື່ອງໝາຍລົບຊ້ຳຊ້ອນ ໂດຍໃຊ້ Math.abs(v)
     const fmt = (v, isPercent = false, isPlan = false) => {
-        if (isPlan) {
-            const color = v >= 100 ? '#10b981' : '#f59e0b';
-            return `<div style="color:${color}; font-weight:bold;">${v >= 100 ? '▲' : '▼'} ${v.toFixed(1)}%</div>`;
-        }
-        const color = v >= 0 ? '#10b981' : '#ef4444';
-        return `<div style="color:${color}; font-weight:500;">${v >= 0 ? '▲' : '▼'} ${v.toLocaleString(undefined, { minimumFractionDigits: isPercent?1:0, maximumFractionDigits: isPercent?1:2 })}${isPercent?'%':''}</div>`;
+        const color = v >= 0 ? '#10b981' : '#ef4444'; // ຂຽວ (ບວກ), ແດງ (ລົບ)
+        return `<div style="color:${color}; font-weight:bold;">${v >= 0 ? '▲' : '▼'} ${Math.abs(v).toLocaleString(undefined, { minimumFractionDigits: isPercent?1:0, maximumFractionDigits: isPercent?1:2 })}${isPercent?'%':''}</div>`;
     };
 
     if(allBranches.length === 0) { tbody.innerHTML = `<tr><td colspan="10" style="text-align:center; padding:30px; color:#ffffff;">ບໍ່ມີຂໍ້ມູນ</td></tr>`; return; }
@@ -322,31 +326,32 @@ function renderMainTable(tableData) {
 
         TB+=baselineVal; TP+=plan2026; TO+=sumO; TC+=sumC; TD25+=d25; TDP+=dP; TDO+=dO;
 
-        return `<tr style="color:#ffffff;">
-            <td style="text-align:left; font-weight:500;">${bName}</td>
-            <td align="right">${baselineVal.toLocaleString()}</td>
-            <td align="right" style="color:#94a3b8;">${plan2026.toLocaleString()}</td>
-            <td align="right" style="color:#f59e0b;">${sumO.toLocaleString()}</td>
-            <td align="right" style="color:#2563eb; font-weight:bold;">${sumC.toLocaleString()}</td>
-            <td align="center">${fmt(d25)}</td>
-            <td align="center">${fmt(dP)}</td>
-            <td align="center">${fmt(dO)}</td>
-            <td align="center">${fmt(p25, true)}</td>
-            <td align="center">${fmt(pP, true, true)}</td> 
+        // ຝັງໂຄດສີ Inline ໃຫ້ທຸກໆຖັນ ເພື່ອໃຫ້ PDF ເຫັນສີແຈ້ງ 100% ບໍ່ມີມົ່ວ
+        return `<tr style="background-color: transparent;">
+            <td style="color:#f8fafc; font-weight:500; border-bottom:1px solid #334155; padding:15px 10px;">${bName}</td>
+            <td align="right" style="color:#f8fafc; border-bottom:1px solid #334155; padding:15px 10px;">${baselineVal.toLocaleString()}</td>
+            <td align="right" style="color:#94a3b8; border-bottom:1px solid #334155; padding:15px 10px;">${plan2026.toLocaleString()}</td>
+            <td align="right" style="color:#fbbf24; border-bottom:1px solid #334155; padding:15px 10px; font-weight:bold;">${sumO.toLocaleString()}</td>
+            <td align="right" style="color:#3b82f6; border-bottom:1px solid #334155; padding:15px 10px; font-weight:bold;">${sumC.toLocaleString()}</td>
+            <td align="center" style="border-bottom:1px solid #334155; padding:15px 10px;">${fmt(d25)}</td>
+            <td align="center" style="border-bottom:1px solid #334155; padding:15px 10px;">${fmt(dP)}</td>
+            <td align="center" style="border-bottom:1px solid #334155; padding:15px 10px;">${fmt(dO)}</td>
+            <td align="center" style="border-bottom:1px solid #334155; padding:15px 10px;">${fmt(p25, true)}</td>
+            <td align="center" style="border-bottom:1px solid #334155; padding:15px 10px;">${fmt(pP, true, true)}</td> 
         </tr>`;
     }).join('');
 
-    const totalHtml = `<tr style="background:#1f2937; font-weight:bold; color:#ffffff;">
-        <td style="text-align:left; color:#2563eb;">ລວມທັງໝົດ</td>
-        <td align="right">${TB.toLocaleString()}</td>
-        <td align="right">${TP.toLocaleString()}</td>
-        <td align="right" style="color:#f59e0b;">${TO.toLocaleString()}</td>
-        <td align="right" style="color:#2563eb; font-size:1.05rem;">${TC.toLocaleString()}</td>
-        <td align="center">${fmt(TD25)}</td>
-        <td align="center">${fmt(TDP)}</td>
-        <td align="center">${fmt(TDO)}</td>
-        <td align="center">${fmt(TB?((TC-TB)/TB)*100:0, true)}</td>
-        <td align="center">${fmt(TP?(TC/TP)*100:0, true, true)}</td>
+    const totalHtml = `<tr>
+        <td style="color:#f8fafc; font-weight:bold; background-color:#1e293b; border-bottom:1px solid #334155; padding:15px 10px;">ລວມທັງໝົດ</td>
+        <td align="right" style="color:#f8fafc; font-weight:bold; background-color:#1e293b; border-bottom:1px solid #334155; padding:15px 10px;">${TB.toLocaleString()}</td>
+        <td align="right" style="color:#f8fafc; font-weight:bold; background-color:#1e293b; border-bottom:1px solid #334155; padding:15px 10px;">${TP.toLocaleString()}</td>
+        <td align="right" style="color:#fbbf24; font-weight:bold; background-color:#1e293b; border-bottom:1px solid #334155; padding:15px 10px;">${TO.toLocaleString()}</td>
+        <td align="right" style="color:#3b82f6; font-weight:bold; background-color:#1e293b; border-bottom:1px solid #334155; padding:15px 10px; font-size:1.1rem;">${TC.toLocaleString()}</td>
+        <td align="center" style="background-color:#1e293b; border-bottom:1px solid #334155; padding:15px 10px;">${fmt(TD25)}</td>
+        <td align="center" style="background-color:#1e293b; border-bottom:1px solid #334155; padding:15px 10px;">${fmt(TDP)}</td>
+        <td align="center" style="background-color:#1e293b; border-bottom:1px solid #334155; padding:15px 10px;">${fmt(TDO)}</td>
+        <td align="center" style="background-color:#1e293b; border-bottom:1px solid #334155; padding:15px 10px;">${fmt(TB?((TC-TB)/TB)*100:0, true)}</td>
+        <td align="center" style="background-color:#1e293b; border-bottom:1px solid #334155; padding:15px 10px;">${fmt(TP?(TC/TP)*100:0, true, true)}</td>
     </tr>`;
     tbody.innerHTML = rowsHtml + totalHtml;
 }
@@ -604,132 +609,98 @@ async function deleteDataByDate() {
     if (error) alert("Error: " + error.message); else { alert("✅ ລຶບສຳເລັດ!"); document.getElementById('upload-modal').style.display = 'none'; rawData = []; await loadData(); }
 }
 
-// ຟັງຊັນ Export PDF ຂັ້ນສູງສຸດ ບັງຄັບການແປງສີເພື່ອແກ້ໄຂບັນຫາໜ້າຈໍດຳ/ຕົວໜັງສືຫາຍ
+// ຟັງຊັນ Export PDF ທີ່ດຶງພາບຈາກໜ້າຈໍແທ້ໆ ຮັບປະກັນເຫັນສີ ແລະ ຕົວໜັງສື 100% ໂດຍບໍ່ມີການຊ່ອນ
 function exportToPDF() {
+    // ກວດສອບຖ້າບຣາວເຊີບັອກການດາວໂຫຼດ html2pdf
     if (typeof html2pdf === 'undefined') {
-        return alert("ບຣາວເຊີຂອງທ່ານປິດກັ້ນການໂຫຼດ PDF (Tracking Prevention).\nກະລຸນາກົດປິດການປ້ອງກັນສຳລັບເວັບນີ້ (ຮູບໄສ້ກັ່ນຕອງເທິງແຖບ URL) ແລ້ວລອງໃໝ່.");
+        return alert("⚠️ ບຣາວເຊີຂອງທ່ານປິດກັ້ນການໂຫຼດລະບົບ PDF (Tracking Prevention).\nກະລຸນາກົດປິດການປ້ອງກັນ (ຮູບໄສ້ກັ່ນຕອງເທິງຊ່ອງ URL) ແລ້ວລອງໃໝ່, ຫຼື ໃຊ້ Google Chrome ແທນ.");
     }
 
     const tableCard = document.querySelector('#branch-table').closest('.card');
     if (!tableCard) return alert("ບໍ່ພົບຂໍ້ມູນທີ່ຈະດາວໂຫຼດ!");
-    
+
     showLoading('ກຳລັງສ້າງໄຟລ໌ PDF...');
+
+    const today = new Date().toISOString().slice(0, 10);
+    let pdfTitle = "ລາຍງານ ";
+    if (currentActivePage === 'PUPOM') pdfTitle += "ປູພົມ";
+    else if (currentActivePage === 'BEERLAO') pdfTitle += "ເບຍລາວ";
+    else if (currentActivePage === 'CAMPAIGN') pdfTitle += "ລູກຄ້າແຄມແປນ";
+
+    // 1. ເຊື່ອງປຸ່ມ Action ຊົ່ວຄາວ ເພື່ອບໍ່ໃຫ້ຕິດໄປນຳໃນ PDF
+    const actionBtns = tableCard.querySelector('.action-buttons');
+    const originalActionDisplay = actionBtns ? actionBtns.style.display : '';
+    if (actionBtns) actionBtns.style.display = 'none';
+
+    // 2. ປ່ຽນຫົວຂໍ້ໃຫ້ຈັດກາງ
+    const headerTitle = tableCard.querySelector('#table-section-title');
+    const originalTitle = headerTitle ? headerTitle.innerText : '';
+    const originalTitleColor = headerTitle ? headerTitle.style.color : '';
+    if (headerTitle) {
+        headerTitle.innerText = `${pdfTitle} (ປະຈຳວັນທີ: ${today})`;
+        headerTitle.style.color = '#3b82f6';
+        headerTitle.style.textAlign = 'center';
+        headerTitle.style.display = 'block';
+        headerTitle.style.width = '100%';
+        headerTitle.style.marginBottom = '20px';
+        headerTitle.style.fontSize = '20px';
+    }
+
+    // 3. ບັງຄັບສີພື້ນຫຼັງ Card ໃຫ້ເປັນສີດຳເຂັ້ມຄືຮູບທີ່ສົ່ງມາ
+    const originalCardBg = tableCard.style.backgroundColor;
+    tableCard.style.backgroundColor = '#0f172a'; 
     
-    // ໜ່ວງເວລາໜ້ອຍໜຶ່ງໃຫ້ Loading Screen ຂຶ້ນມາກ່ອນ
+    // ປົດລັອກການເລື່ອນ (Scroll) ເພື່ອປ້ອງກັນຕາຕະລາງຖືກຕັດຂອບ
+    const responsiveDiv = tableCard.querySelector('.table-responsive');
+    const originalOverflow = responsiveDiv ? responsiveDiv.style.overflowX : '';
+    if (responsiveDiv) responsiveDiv.style.overflowX = 'visible';
+
+    // ຕັ້ງຄ່າ html2pdf ໂດຍກຳນົດສີດຳເປັນພື້ນຫຼັງໃນການຖ່າຍພາບ
+    const opt = { 
+        margin:       0.2,
+        filename:     `${pdfTitle.replace(/\s+/g, '_')}_${today}.pdf`,
+        image:        { type: 'jpeg', quality: 1.0 },
+        html2canvas:  { 
+            scale: 2, 
+            useCORS: true, 
+            backgroundColor: '#0f172a'
+        }, 
+        jsPDF:        { unit: 'in', format: 'a3', orientation: 'landscape' }
+    };
+
+    // 4. ສັ່ງໃຫ້ html2pdf ຖ່າຍພາບຈາກໜ້າຈໍແທ້ໆ ໂດຍກົງ (ບໍ່ມີການເປີດໜ້າ Print)
     setTimeout(() => {
-        const today = new Date().toISOString().slice(0, 10);
-        let pdfTitle = "ລາຍງານ";
-        if (currentActivePage === 'PUPOM') pdfTitle += " ປູພົມ";
-        else if (currentActivePage === 'BEERLAO') pdfTitle += " ເບຍລາວ";
-        else if (currentActivePage === 'CAMPAIGN') pdfTitle += " ລູກຄ້າແຄມແປນ";
-
-        // 1. ເຊື່ອງປຸ່ມ Action
-        const actionBtns = tableCard.querySelector('.action-buttons');
-        const originalActionDisplay = actionBtns ? actionBtns.style.display : '';
-        if (actionBtns) actionBtns.style.display = 'none';
-
-        // 2. ປ່ຽນຫົວຂໍ້
-        const headerTitle = tableCard.querySelector('#table-section-title');
-        const originalTitle = headerTitle ? headerTitle.innerText : '';
-        if (headerTitle) {
-            headerTitle.innerText = `ລາຍລະອຽດຂໍ້ມູນ ${pdfTitle} (ວັນທີ: ${today})`;
-        }
-
-        // 3. ປົດລັອກ Scroll ບໍ່ໃຫ້ມັນຕັດຂອບ
-        const responsiveDiv = tableCard.querySelector('.table-responsive');
-        const originalOverflow = responsiveDiv ? responsiveDiv.style.overflowX : '';
-        if (responsiveDiv) responsiveDiv.style.overflowX = 'visible';
-
-        // =========================================================================
-        // 🚨 ເຕັກນິກສຳຄັນ: ບັງຄັບແປງ CSS Variables ໃຫ້ເປັນຄ່າສີແທ້ໆ 🚨
-        // =========================================================================
-        const originalStyles = new Map();
-        const allElements = tableCard.querySelectorAll('*');
-        
-        // ເກັບຄ່າສີທີ່ແທ້ຈິງທີ່ບຣາວເຊີກຳລັງສະແດງຜົນຢູ່ (Computed Style)
-        allElements.forEach(el => {
-            const comp = window.getComputedStyle(el);
-            originalStyles.set(el, {
-                color: el.style.color,
-                backgroundColor: el.style.backgroundColor,
-                borderColor: el.style.borderColor,
-                fontFamily: el.style.fontFamily,
-                compColor: comp.color,
-                compBg: comp.backgroundColor,
-                compBorder: comp.borderColor
-            });
-        });
-
-        // ແທນທີ່ສີເຫຼົ່ານັ້ນລົງໄປໃນ Inline Style ເພື່ອໃຫ້ html2canvas ເຫັນ 100%
-        allElements.forEach(el => {
-            const styles = originalStyles.get(el);
-            el.style.color = styles.compColor;
-            if (styles.compBg !== 'rgba(0, 0, 0, 0)' && styles.compBg !== 'transparent') {
-                el.style.backgroundColor = styles.compBg;
-            }
-            el.style.borderColor = styles.compBorder;
-            // ບັງຄັບ Font
-            el.style.fontFamily = "'Noto Sans Lao', sans-serif"; 
-        });
-
-        // ບັງຄັບສີພື້ນຫຼັງ Card ເປັນສີດຳ
-        const origCardStyle = { bg: tableCard.style.backgroundColor, color: tableCard.style.color };
-        tableCard.style.backgroundColor = '#111827';
-        tableCard.style.color = '#ffffff';
-        tableCard.style.fontFamily = "'Noto Sans Lao', sans-serif";
-
-        // ຕັ້ງຄ່າ html2pdf
-        const opt = { 
-            margin:       [0.3, 0.3, 0.3, 0.3],
-            filename:     `${pdfTitle.replace(/\s+/g, '_')}_${today}.pdf`,
-            image:        { type: 'jpeg', quality: 1.0 },
-            html2canvas:  { scale: 2, useCORS: true, backgroundColor: '#111827', windowWidth: 1400, logging: false }, 
-            jsPDF:        { unit: 'in', format: 'a3', orientation: 'landscape' }
-        };
-
-        // ສັ່ງໃຫ້ html2pdf ສ້າງ ແລະ ດາວໂຫຼດໂດຍກົງ
         html2pdf().set(opt).from(tableCard).save().then(() => {
             
-            // 🔄 ກູ້ຄືນສະພາບໜ້າຈໍທຸກຢ່າງໃຫ້ກັບມາເປັນປົກກະຕິ ຫຼັງຈາກໂຫຼດສຳເລັດ
+            // 🔄 ກູ້ຄືນສະພາບເດີມຫຼັງໂຫຼດສຳເລັດ
             if (actionBtns) actionBtns.style.display = originalActionDisplay;
-            if (headerTitle) headerTitle.innerText = originalTitle;
+            if (headerTitle) {
+                headerTitle.innerText = originalTitle;
+                headerTitle.style.color = originalTitleColor;
+                headerTitle.style.textAlign = '';
+                headerTitle.style.display = '';
+                headerTitle.style.marginBottom = '';
+                headerTitle.style.fontSize = '';
+            }
+            tableCard.style.backgroundColor = originalCardBg;
             if (responsiveDiv) responsiveDiv.style.overflowX = originalOverflow;
-            
-            tableCard.style.backgroundColor = origCardStyle.bg;
-            tableCard.style.color = origCardStyle.color;
-
-            allElements.forEach(el => {
-                const styles = originalStyles.get(el);
-                el.style.color = styles.color;
-                el.style.backgroundColor = styles.backgroundColor;
-                el.style.borderColor = styles.borderColor;
-                el.style.fontFamily = styles.fontFamily;
-            });
             
             hideLoading();
         }).catch(err => {
             console.error(err);
-            // ກູ້ຄືນສະພາບເດີມເຖິງຈະມີ Error
+            // ກູ້ຄືນສະພາບເດີມເຖິງຈະມີ Error ກໍຕາມ
             if (actionBtns) actionBtns.style.display = originalActionDisplay;
-            if (headerTitle) headerTitle.innerText = originalTitle;
+            if (headerTitle) {
+                headerTitle.innerText = originalTitle;
+                headerTitle.style.color = originalTitleColor;
+            }
+            tableCard.style.backgroundColor = originalCardBg;
             if (responsiveDiv) responsiveDiv.style.overflowX = originalOverflow;
-            
-            tableCard.style.backgroundColor = origCardStyle.bg;
-            tableCard.style.color = origCardStyle.color;
-
-            allElements.forEach(el => {
-                const styles = originalStyles.get(el);
-                el.style.color = styles.color;
-                el.style.backgroundColor = styles.backgroundColor;
-                el.style.borderColor = styles.borderColor;
-                el.style.fontFamily = styles.fontFamily;
-            });
             
             hideLoading();
             alert("ເກີດຂໍ້ຜິດພາດໃນການສ້າງ PDF: " + err.message);
         });
-
-    }, 200); 
+    }, 300); // ໜ່ວງເວລາໜ້ອຍໜຶ່ງໃຫ້ CSS ອັບເດດທັນກ່ອນຖ່າຍພາບ
 }
 
 function exportToExcel() {
