@@ -106,12 +106,23 @@ function initApp() {
     document.getElementById('apply-filter').onclick = handleApplyFilterClick;
     document.getElementById('logout-btn').onclick = () => location.reload();
 
-    window.saveBranch = saveBranch; window.closeGoalModal = closeGoalModal;
-    window.deleteBranch = deleteBranch; window.setQuickFilter = setQuickFilter;
-    window.updateAmountInput = updateAmountInput; window.clearFilters = clearFilters;
-    window.loadKPIData = loadKPIData; window.deleteDataByDate = deleteDataByDate;
-    window.exportToPDF = exportToPDF; window.exportToExcel = exportToExcel;
+    window.saveBranch = saveBranch; 
+    window.closeGoalModal = closeGoalModal;
+    window.deleteBranch = deleteBranch; 
+    window.setQuickFilter = setQuickFilter;
+    window.updateAmountInput = updateAmountInput; 
+    window.clearFilters = clearFilters;
+    window.loadKPIData = loadKPIData; 
+    window.deleteDataByDate = deleteDataByDate;
+    window.exportToPDF = exportToPDF; 
+    window.exportToExcel = exportToExcel;
     window.resetChart = resetChart;
+    
+    window.switchPage = switchPage;
+    window.deleteUpload = deleteUpload;
+    window.replaceFile = replaceFile;
+    window.handleReplaceFile = handleReplaceFile;
+    window.handleNewUpload = handleNewUpload;
 
     checkPermissions();
     loadData();
@@ -126,6 +137,13 @@ function switchPageView(page) {
     document.getElementById('view-kpi').style.display = page === 'kpi' ? 'block' : 'none';
     if(page === 'dashboard') setTimeout(() => { charts.area?.resize(); charts.donut?.resize(); charts.bar?.resize(); }, 100);
     if(page === 'kpi') setTimeout(() => { kpiChart?.resize(); }, 100);
+}
+
+function switchPage(event, pageId) {
+    event.preventDefault();
+    document.querySelectorAll('.menu-item').forEach(b => b.classList.remove('active'));
+    event.currentTarget.classList.add('active');
+    switchPageView(pageId);
 }
 
 function checkPermissions() {
@@ -190,7 +208,18 @@ async function fetchYearEnd2025() {
 function updateTableHeader() {
     const thead = document.querySelector('#branch-table thead');
     if (!thead) return;
-    thead.innerHTML = `<tr><th>ສາຂາ</th><th style="text-align:right;">ຍອດຍົກມາ</th><th style="text-align:right;">ແຜນປີ 2026</th><th style="text-align:right; color: var(--warning);">ຍອດເປີດໃໝ່</th><th style="text-align:right; color: var(--primary);">ປະຕິບັດໄດ້</th><th style="text-align:center;">ທຽບ 2025</th><th style="text-align:center;">ທຽບແຜນ</th><th style="text-align:center;">% ທຽບ 2025</th><th style="text-align:center;">% ບັນລຸ</th></tr>`;
+    thead.innerHTML = `<tr>
+        <th style="color:#94a3b8;">ສາຂາ</th>
+        <th style="text-align:right; color:#94a3b8;">ຍອດຍົກມາ</th>
+        <th style="text-align:right; color:#94a3b8;">ແຜນປີ 2026</th>
+        <th style="text-align:right; color:#f59e0b;">ຍອດເປີດໃໝ່</th>
+        <th style="text-align:right; color:#2563eb;">ປະຕິບັດໄດ້</th>
+        <th style="text-align:center; color:#94a3b8;">ທຽບ 2025</th>
+        <th style="text-align:center; color:#94a3b8;">ທຽບແຜນ</th>
+        <th style="text-align:center; color:#94a3b8;">ທຽບຍອດເປີດໃໝ່</th>
+        <th style="text-align:center; color:#94a3b8;">% ທຽບ 2025</th>
+        <th style="text-align:center; color:#94a3b8;">% ບັນລຸ</th>
+    </tr>`;
 }
 
 // ==========================================
@@ -253,7 +282,7 @@ function renderMainTable(tableData) {
         return `<div style="color:${color}; font-weight:500;">${v >= 0 ? '▲' : '▼'} ${v.toLocaleString(undefined, { minimumFractionDigits: isPercent?1:0, maximumFractionDigits: isPercent?1:2 })}${isPercent?'%':''}</div>`;
     };
 
-    if(allBranches.length === 0) { tbody.innerHTML = `<tr><td colspan="9" style="text-align:center; padding:30px;">ບໍ່ມີຂໍ້ມູນ</td></tr>`; return; }
+    if(allBranches.length === 0) { tbody.innerHTML = `<tr><td colspan="10" style="text-align:center; padding:30px; color:#ffffff;">ບໍ່ມີຂໍ້ມູນ</td></tr>`; return; }
 
     const rowsHtml = allBranches.map(bName => {
         const set2025 = dynamicBranchSettings.find(s => s.branch_name === bName && s.target_year === 2025);
@@ -284,28 +313,40 @@ function renderMainTable(tableData) {
         let baselineVal = yearEnd2025Data[bName] || 0;
         if (baselineVal === 0 && set2025) baselineVal = set2025.balance_prev_year || 0;
 
-        const d25 = sumC - baselineVal; const dP = sumC - plan2026; let dO = sumC - sumO; 
+        const d25 = sumC - baselineVal; 
+        const dP = sumC - plan2026; 
+        let dO = sumC - sumO; 
+        
         let p25 = baselineVal !== 0 ? (d25 / baselineVal) * 100 : (sumC > 0 ? 100 : 0);
         let pP = plan2026 !== 0 ? (sumC / plan2026) * 100 : 0;
 
         TB+=baselineVal; TP+=plan2026; TO+=sumO; TC+=sumC; TD25+=d25; TDP+=dP; TDO+=dO;
 
-        return `<tr>
+        return `<tr style="color:#ffffff;">
             <td style="text-align:left; font-weight:500;">${bName}</td>
             <td align="right">${baselineVal.toLocaleString()}</td>
-            <td align="right" style="color:var(--text-muted);">${plan2026.toLocaleString()}</td>
-            <td align="right" style="color:var(--warning);">${sumO.toLocaleString()}</td>
-            <td align="right" style="color:var(--primary); font-weight:bold;">${sumC.toLocaleString()}</td>
-            <td align="center">${fmt(d25)}</td><td align="center">${fmt(dP)}</td><td align="center">${fmt(p25, true)}</td><td align="center">${fmt(pP, true, true)}</td> </tr>`;
+            <td align="right" style="color:#94a3b8;">${plan2026.toLocaleString()}</td>
+            <td align="right" style="color:#f59e0b;">${sumO.toLocaleString()}</td>
+            <td align="right" style="color:#2563eb; font-weight:bold;">${sumC.toLocaleString()}</td>
+            <td align="center">${fmt(d25)}</td>
+            <td align="center">${fmt(dP)}</td>
+            <td align="center">${fmt(dO)}</td>
+            <td align="center">${fmt(p25, true)}</td>
+            <td align="center">${fmt(pP, true, true)}</td> 
+        </tr>`;
     }).join('');
 
-    const totalHtml = `<tr style="background:var(--bg-surface-hover); font-weight:bold;">
-        <td style="text-align:left; color:var(--primary);">ລວມທັງໝົດ</td>
+    const totalHtml = `<tr style="background:#1f2937; font-weight:bold; color:#ffffff;">
+        <td style="text-align:left; color:#2563eb;">ລວມທັງໝົດ</td>
         <td align="right">${TB.toLocaleString()}</td>
         <td align="right">${TP.toLocaleString()}</td>
-        <td align="right" style="color:var(--warning);">${TO.toLocaleString()}</td>
-        <td align="right" style="color:var(--primary); font-size:1.05rem;">${TC.toLocaleString()}</td>
-        <td align="center">${fmt(TD25)}</td><td align="center">${fmt(TDP)}</td><td align="center">${fmt(TB?((TC-TB)/TB)*100:0, true)}</td><td align="center">${fmt(TP?(TC/TP)*100:0, true, true)}</td>
+        <td align="right" style="color:#f59e0b;">${TO.toLocaleString()}</td>
+        <td align="right" style="color:#2563eb; font-size:1.05rem;">${TC.toLocaleString()}</td>
+        <td align="center">${fmt(TD25)}</td>
+        <td align="center">${fmt(TDP)}</td>
+        <td align="center">${fmt(TDO)}</td>
+        <td align="center">${fmt(TB?((TC-TB)/TB)*100:0, true)}</td>
+        <td align="center">${fmt(TP?(TC/TP)*100:0, true, true)}</td>
     </tr>`;
     tbody.innerHTML = rowsHtml + totalHtml;
 }
@@ -399,7 +440,6 @@ function setQuickFilter(type) {
 function renderCharts(uniqueData, filteredData) {
     if (!charts.area || !charts.donut || !charts.bar) return;
 
-    // --- 1. Area Chart (Timeline / Trading Style) ---
     const sourceData = filteredData || uniqueData;
     const dateMap = new Map();
     sourceData.forEach(d => {
@@ -423,7 +463,6 @@ function renderCharts(uniqueData, filteredData) {
         }]
     }, true);
 
-    // --- 2. Donut Chart (Number in Center) ---
     let activeCount = 0, inactiveCount = 0, zeroCount = 0;
     
     uniqueData.forEach(d => {
@@ -432,22 +471,19 @@ function renderCharts(uniqueData, filteredData) {
         if (close <= 0) {
             zeroCount++;
         } else {
-            // ດຶງປະຫວັດບັນຊີນີ້ ສະເພາະໃນຊ່ວງທີ່ Filter (filteredData)
             const history = filteredData.filter(r => r.ascount_no === d.ascount_no);
-            history.sort((a, b) => a.date_key.localeCompare(b.date_key)); // ລຽງຈາກເກົ່າໄປໃໝ່
+            history.sort((a, b) => a.date_key.localeCompare(b.date_key)); 
             
             if (history.length > 1) {
-                // ທຽບຍອດປິດຫຼ້າສຸດ ກັບ ຍອດທຳອິດໃນຊ່ວງເວລາທີ່ເລືອກ
                 const startClose = Number(history[0].closing_balance) || 0;
                 if (Math.abs(close - startClose) < 0.01) inactiveCount++;
                 else activeCount++;
             } else {
-                // ຖ້າມີພຽງການອັບໂຫຼດດຽວໃນຊ່ວງເວລານີ້
                 const open = Number(d.opening_balance) || 0;
                 if (open > 0 && Math.abs(open - close) < 0.01) {
-                    inactiveCount++; // ມີຍອດເປີດມາພ້ອມ ແຕ່ຍອດປິດທໍ່ເດີມ
+                    inactiveCount++; 
                 } else {
-                    activeCount++; // ເຄື່ອນໄຫວ
+                    activeCount++; 
                 }
             }
         }
@@ -474,7 +510,6 @@ function renderCharts(uniqueData, filteredData) {
         series: [{ type: 'pie', radius: ['55%', '80%'], avoidLabelOverlap: false, itemStyle: { borderColor: '#111827', borderWidth: 2 }, label: { show: false }, data: donutData }]
     });
 
-    // --- 3. Bar Chart (Target vs Actual) ---
     let branches = [...new Set(dynamicBranchSettings.map(s => s.branch_name))]; 
     sortBranchesCustom(branches);
 
@@ -527,7 +562,6 @@ async function confirmUpload() {
 
                 let openVal = 0; let closeVal = 0;
                 
-                // ກວດຈັບຄໍລຳທັງພາສາລາວ ແລະ ອັງກິດໃຫ້ຄອບຄຸມຫຼາຍຂຶ້ນ
                 const hasOpenCol = ['openingbalance', 'ຍອດເປີດ', 'ຍອດຍົກມາ', 'ຍົກມາ', 'openbalance'].some(k => k in cleanRow);
                 const hasCloseCol = ['closingbalance', 'ຍອດປິດ', 'ຍອດຄົງເຫຼືອ', 'ຍອດເງິນ', 'closebalance'].some(k => k in cleanRow);
 
@@ -571,25 +605,130 @@ async function deleteDataByDate() {
 }
 
 function exportToPDF() {
-    const element = document.getElementById('table-content-area'); if (!element) return alert("ບໍ່ພົບຂໍ້ມູນ!");
+    const originalTable = document.getElementById('branch-table');
+    if (!originalTable) return alert("ບໍ່ພົບຂໍ້ມູນທີ່ຈະດາວໂຫຼດ!");
+    
+    showLoading('ກຳລັງສ້າງໄຟລ໌ PDF...');
+    
     const today = new Date().toISOString().slice(0, 10);
-    const opt = { margin: [0.2, 0.2, 0.2, 0.2], filename: `Report_${today}.pdf`, image: { type: 'jpeg', quality: 1.0 }, html2canvas: { scale: 2, useCORS: true, backgroundColor: '#1e293b' }, jsPDF: { unit: 'in', format: 'a3', orientation: 'landscape' } };
-    const container = document.createElement('div'); container.style.backgroundColor = '#1e293b'; container.style.padding = '20px'; container.style.color = '#ffffff'; 
-    container.innerHTML = `<h1 style="text-align:center; color:#3b82f6;">ລາຍງານ ປະຈຳວັນທີ: ${today}</h1>`;
-    const tableClone = element.cloneNode(true);
-    const ths = tableClone.querySelectorAll('th'); ths.forEach(th => { th.style.backgroundColor = '#0f172a'; th.style.color = '#fbbf24'; th.style.border = '1px solid #334155'; });
-    const tds = tableClone.querySelectorAll('td'); tds.forEach(td => { td.style.borderBottom = '1px solid #334155'; if (!td.style.color) td.style.color = '#ffffff'; });
+    let pdfTitle = "ລາຍງານ";
+    if (currentActivePage === 'PUPOM') pdfTitle += " ປູພົມ";
+    else if (currentActivePage === 'BEERLAO') pdfTitle += " ເບຍລາວ";
+    else if (currentActivePage === 'CAMPAIGN') pdfTitle += " ລູກຄ້າແຄມແປນ";
+
+    // 1. ສ້າງ Container ຂຶ້ນມາໃໝ່ເພື່ອຫຼີກລ່ຽງ CSS ຂອງໜ້າຈໍຫຼັກມາກວນ
+    const container = document.createElement('div');
+    container.style.position = 'absolute';
+    container.style.top = '0';
+    container.style.left = '0';
+    container.style.zIndex = '-9999'; // ໃຫ້ຢູ່ຫຼັງສຸດເພື່ອບໍ່ໃຫ້ລົບກວນໜ້າຈໍ
+    container.style.width = '1400px'; // ບັງຄັບຄວາມກວ້າງບໍ່ໃຫ້ຂໍ້ຄວາມຕົກແຖວ
+    container.style.backgroundColor = '#0b1120'; // ພື້ນຫຼັງສີດຳ
+    container.style.padding = '40px';
+    container.style.color = '#ffffff';
+    container.style.fontFamily = '"Noto Sans Lao", sans-serif';
+
+    // 2. ຫົວຂໍ້
+    const titleEl = document.createElement('h2');
+    titleEl.innerText = `ລາຍລະອຽດຂໍ້ມູນ ${pdfTitle} (ວັນທີ: ${today})`;
+    titleEl.style.textAlign = 'center';
+    titleEl.style.marginBottom = '20px';
+    titleEl.style.color = '#3b82f6';
+    container.appendChild(titleEl);
+
+    // 3. ກັອບປີ້ຕາຕະລາງ
+    const tableClone = originalTable.cloneNode(true);
+    tableClone.style.width = '100%';
+    tableClone.style.borderCollapse = 'collapse';
+    
+    // ບັງຄັບໃສ່ສີ Inline Styles ໃຫ້ທຸກໆຖັນ (ປ້ອງກັນ html2canvas ອ່ານສີຜິດ)
+    const ths = tableClone.querySelectorAll('th');
+    ths.forEach(th => {
+        th.style.backgroundColor = '#1f2937';
+        th.style.borderBottom = '1px solid #374151';
+        th.style.padding = '12px';
+    });
+
+    const tds = tableClone.querySelectorAll('td');
+    tds.forEach(td => {
+        td.style.borderBottom = '1px solid #374151';
+        td.style.padding = '12px';
+        if(td.style.color === '') td.style.color = '#ffffff'; // ຖ້າບໍ່ມີສີບັງຄັບໃຫ້ເປັນຂາວ
+    });
+
     container.appendChild(tableClone);
-    html2pdf().set(opt).from(container).save();
+    document.body.appendChild(container); // ແປະໃສ່ DOM ເພື່ອໃຫ້ html2pdf ເຫັນ
+
+    const opt = { 
+        margin:       0.3,
+        filename:     `${pdfTitle.replace(/\s+/g, '_')}_${today}.pdf`,
+        image:        { type: 'jpeg', quality: 1.0 },
+        html2canvas:  { scale: 2, useCORS: true, backgroundColor: '#0b1120', windowWidth: 1400 }, 
+        jsPDF:        { unit: 'in', format: 'a3', orientation: 'landscape' }
+    };
+
+    // 4. ສ້າງ PDF ແລ້ວໂຫຼດ
+    html2pdf().set(opt).from(container).output('blob').then(function(pdfBlob) {
+        const blobUrl = URL.createObjectURL(pdfBlob);
+        const downloadLink = document.createElement('a');
+        downloadLink.href = blobUrl;
+        downloadLink.download = opt.filename;
+        document.body.appendChild(downloadLink);
+        downloadLink.click();
+        document.body.removeChild(downloadLink);
+        URL.revokeObjectURL(blobUrl);
+        
+        document.body.removeChild(container); // ລຶບຖິ້ມຫຼັງຈາກໂຫຼດແລ້ວ
+        hideLoading();
+    }).catch(err => {
+        console.error(err);
+        document.body.removeChild(container);
+        hideLoading();
+        alert("ເກີດຂໍ້ຜິດພາດໃນການສ້າງ PDF: " + err.message);
+    });
 }
 
 function exportToExcel() {
-    const branch = document.getElementById('branch-select').value; let filtered = rawData;
-    if (branch !== 'all') filtered = filtered.filter(d => d.branch_name === branch);
-    if (filtered.length === 0) return alert("ບໍ່ມີຂໍ້ມູນ!");
-    const uniqueMap = new Map(); filtered.forEach(item => { const existing = uniqueMap.get(item.ascount_no); if (!existing || item.date_key > existing.date_key) uniqueMap.set(item.ascount_no, item); });
-    const excelData = Array.from(uniqueMap.values()).map((item, index) => ({ "ລ/ດ": index + 1, "ສາຂາ": item.branch_name, "ເລກບັນຊີ": item.ascount_no, "ຍອດຄົງເຫຼືອ": item.closing_balance }));
-    const worksheet = XLSX.utils.json_to_sheet(excelData); const workbook = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(workbook, worksheet, "Report"); XLSX.writeFile(workbook, `Report_${currentActivePage}.xlsx`);
+    showLoading('ກຳລັງສ້າງໄຟລ໌ Excel...');
+    
+    setTimeout(() => {
+        try {
+            const branch = document.getElementById('branch-select').value; 
+            let filtered = rawData;
+            
+            if (branch !== 'all') filtered = filtered.filter(d => d.branch_name === branch);
+            if (filtered.length === 0) {
+                hideLoading();
+                return alert("ບໍ່ມີຂໍ້ມູນທີ່ຈະດາວໂຫຼດ!");
+            }
+            
+            const uniqueMap = new Map(); 
+            filtered.forEach(item => { 
+                const existing = uniqueMap.get(item.ascount_no); 
+                if (!existing || item.date_key > existing.date_key) uniqueMap.set(item.ascount_no, item); 
+            });
+            
+            const excelData = Array.from(uniqueMap.values()).map((item, index) => ({ 
+                "ລ/ດ": index + 1, 
+                "ສາຂາ": item.branch_name, 
+                "ເລກບັນຊີ": item.ascount_no, 
+                "ຊື່ລູກຄ້າ": item.customer_name || 'ບໍ່ລະບຸ',
+                "ຍອດຍົກມາ": item.opening_balance || 0,
+                "ຍອດຄົງເຫຼືອ": item.closing_balance || 0,
+                "ວັນທີອັບເດດ": item.date_key
+            }));
+            
+            const worksheet = XLSX.utils.json_to_sheet(excelData); 
+            const workbook = XLSX.utils.book_new(); 
+            XLSX.utils.book_append_sheet(workbook, worksheet, "Report"); 
+            XLSX.writeFile(workbook, `Report_${currentActivePage}_${new Date().toISOString().slice(0, 10)}.xlsx`);
+        } catch (err) {
+            console.error(err);
+            alert("ເກີດຂໍ້ຜິດພາດໃນການສ້າງ Excel: " + err.message);
+        } finally {
+            hideLoading();
+        }
+    }, 500);
 }
 
 // ==========================================
@@ -625,4 +764,68 @@ function getColor(pct) { if(pct >= 100) return '#10b981'; if(pct >= 80) return '
 function updateRadarChart(dataArr) {
     if(!kpiChart) kpiChart = echarts.init(document.getElementById('kpiRadarChart'));
     kpiChart.setOption({ radar: { indicator: [{ name: 'ເງິນຝາກ', max: 120 }, { name: 'ບັນຊີໃໝ່', max: 120 }, { name: 'ຢ້ຽມຢາມ', max: 120 }], splitArea: { areaStyle: { color: ['#1e293b'] } }, axisName: { color: '#fff' } }, series: [{ type: 'radar', data: [{ value: dataArr, name: 'Performance', itemStyle: { color: '#3b82f6' }, areaStyle: { opacity: 0.3 } }] }] });
+}
+
+// ==========================================
+// 10. Upload History Utils
+// ==========================================
+let currentRowToReplace = null;
+let currentBranchToReplace = null;
+
+async function deleteUpload(rowId, branchName) {
+    if (confirm(`⚠️ ທ່ານຕ້ອງການລຶບຂໍ້ມູນທັງໝົດຂອງ "${branchName}" ອອກຈາກຖານຂໍ້ມູນແທ້ຫຼືບໍ່? (ລຶບແລ້ວກູ້ຄືນບໍ່ໄດ້)`)) {
+        
+        showLoading('ກຳລັງລຶບ...');
+        const { error } = await _supabase
+            .from('bank_data')
+            .delete()
+            .eq('branch_name', branchName)
+            .eq('campaign_type', currentActivePage); 
+
+        hideLoading();
+        if (error) {
+            alert("ເກີດຂໍ້ຜິດພາດໃນການລຶບ: " + error.message);
+            return;
+        }
+
+        const row = document.getElementById(rowId);
+        if (row) row.remove();
+        
+        alert(`✅ ລຶບຂໍ້ມູນຂອງ "${branchName}" ອອກຈາກຖານຂໍ້ມູນສຳເລັດແລ້ວ!`);
+        rawData = [];
+        await loadData();
+    }
+}
+
+function replaceFile(rowId, branchName) {
+    currentRowToReplace = rowId;
+    currentBranchToReplace = branchName;
+    
+    if (confirm(`ທ່ານຕ້ອງການອັບໂຫຼດໄຟລ໌ໃໝ່ ເພື່ອໄປແທນທີ່ຂໍ້ມູນເກົ່າຂອງ "${branchName}" ແມ່ນບໍ່?`)) {
+        document.getElementById('replaceFileInput').click();
+    }
+}
+
+function handleReplaceFile(input) {
+    if (input.files && input.files[0]) {
+        const newFileName = input.files[0].name;
+        const row = document.getElementById(currentRowToReplace);
+        
+        if (row) {
+            row.cells[2].innerHTML = `<span style="color: #10b981;">📄 </span><span class="text-body">${newFileName}</span>`;
+            const now = new Date();
+            const timeString = now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+            row.cells[0].innerHTML = `ມື້ນີ້ <br><small class="text-muted">${timeString}</small>`;
+        }
+        
+        alert(`✅ ອັບໂຫຼດໄຟລ໌ "${newFileName}" ເຂົ້າໄປແທນທີ່ຂໍ້ມູນຂອງ "${currentBranchToReplace}" ສຳເລັດແລ້ວ!`);
+        input.value = ""; 
+    }
+}
+
+function handleNewUpload(input) {
+    if (input.files && input.files[0]) {
+        alert(`✅ ຮັບໄຟລ໌ "${input.files[0].name}" ເຂົ້າລະບົບແລ້ວ! (ລໍຖ້າການປະມວນຜົນເຂົ້າຕາຕະລາງ)`);
+        input.value = "";
+    }
 }
