@@ -14,6 +14,26 @@ let kpiChart = null;
 
 let currentUserRole = 'viewer'; 
 
+// ສ້າງລາຍຊື່ສາຂາຕາມລຳດັບທີ່ຕ້ອງການ
+const CUSTOM_BRANCH_ORDER = [
+    "ສາຂາພາກນະຄອນຫຼວງ", 
+    "ສາຂານ້ອຍໂພນໄຊ", 
+    "ສາຂານ້ອຍດອນໜູນ", 
+    "ສາຂານ້ອຍຊັງຈ້ຽງ", 
+    "ສາຂານ້ອຍໜອງໜ່ຽງ"
+];
+
+// ຟັງຊັນສຳລັບລຽງລຳດັບສາຂາ
+function sortBranchesCustom(branchesArray) {
+    return branchesArray.sort((a, b) => {
+        let indexA = CUSTOM_BRANCH_ORDER.indexOf(a);
+        let indexB = CUSTOM_BRANCH_ORDER.indexOf(b);
+        if (indexA === -1) indexA = 999;
+        if (indexB === -1) indexB = 999;
+        return indexA !== indexB ? indexA - indexB : a.localeCompare(b, 'lo');
+    });
+}
+
 // ==========================================
 // 2. Auth & Initialization
 // ==========================================
@@ -21,14 +41,8 @@ document.getElementById('login-btn').addEventListener('click', () => {
     const user = document.getElementById('user-auth').value.trim();
     const pass = document.getElementById('pass-auth').value.trim();
 
-    if (user === 'admin' && pass === '1234') { 
-        currentUserRole = 'admin'; 
-        performLogin(); 
-    } 
-    else if (user === 'MKT01' && pass === '3578') { 
-        currentUserRole = 'viewer'; 
-        performLogin(); 
-    } 
+    if (user === 'admin' && pass === '1234') { currentUserRole = 'admin'; performLogin(); } 
+    else if (user === 'MKT01' && pass === '3578') { currentUserRole = 'viewer'; performLogin(); } 
     else {
         const err = document.getElementById('auth-error');
         err.style.display = 'block';
@@ -47,29 +61,19 @@ function performLogin() {
 
 function showLoading(text = 'ກຳລັງປະມວນຜົນ...') {
     const loader = document.getElementById('loading-overlay');
-    if(loader) { 
-        document.getElementById('loading-text').innerText = text; 
-        loader.style.display = 'flex'; 
-        void loader.offsetWidth; 
-        loader.style.opacity = '1'; 
-    }
+    if(loader) { loader.style.display = 'flex'; void loader.offsetWidth; loader.style.opacity = '1'; }
 }
 
 function hideLoading() {
     const loader = document.getElementById('loading-overlay');
-    if(loader) { 
-        loader.style.opacity = '0'; 
-        setTimeout(() => { loader.style.display = 'none'; }, 300); 
-    }
+    if(loader) { loader.style.opacity = '0'; setTimeout(() => { loader.style.display = 'none'; }, 300); }
 }
 
 function initApp() {
-    // ປະກາດການໃຊ້ງານ Charts
     charts.area = echarts.init(document.getElementById('largeAreaChart'));
     charts.donut = echarts.init(document.getElementById('donutChartDiv'));
     charts.bar = echarts.init(document.getElementById('barChartDiv'));
 
-    // ຈັດການປຸ່ມເມນູດ້ານຊ້າຍ
     document.querySelectorAll('.menu-item[data-view]').forEach(btn => {
         btn.onclick = function() {
             document.querySelectorAll('.menu-item').forEach(b => b.classList.remove('active'));
@@ -79,18 +83,11 @@ function initApp() {
             const titleElement = document.getElementById('page-title');
             if (titleElement) titleElement.innerText = "Dashboard " + (view === 'PUPOM' ? 'ປູພົມ' : view === 'BEERLAO' ? 'ເບຍລາວ' : 'ລູກຄ້າແຄມແປນ');
 
-            if (view === 'KPI') { 
-                switchPageView('kpi'); 
-                loadKPIData(); 
-            } else { 
-                switchPageView('dashboard'); 
-                currentActivePage = view.toUpperCase(); 
-                loadData(); 
-            }
+            if (view === 'KPI') { switchPageView('kpi'); loadKPIData(); } 
+            else { switchPageView('dashboard'); currentActivePage = view.toUpperCase(); loadData(); }
         };
     });
 
-    // ຈັດການປຸ່ມ Modal ຕ່າງໆ
     document.getElementById('upload-trigger').onclick = () => document.getElementById('upload-modal').style.display = 'flex';
     document.getElementById('close-modal').onclick = () => document.getElementById('upload-modal').style.display = 'none';
     
@@ -105,27 +102,20 @@ function initApp() {
         };
     }
 
-    // ຈັດການປຸ່ມ Action ຕ່າງໆ
     document.getElementById('start-upload-btn').onclick = confirmUpload;
     document.getElementById('apply-filter').onclick = handleApplyFilterClick;
     document.getElementById('logout-btn').onclick = () => location.reload();
 
-    window.saveBranch = saveBranch; 
-    window.closeGoalModal = closeGoalModal;
-    window.deleteBranch = deleteBranch; 
-    window.setQuickFilter = setQuickFilter;
-    window.updateAmountInput = updateAmountInput; 
-    window.clearFilters = clearFilters;
-    window.loadKPIData = loadKPIData; 
-    window.deleteDataByDate = deleteDataByDate;
-    window.exportToPDF = exportToPDF; 
-    window.exportToExcel = exportToExcel;
+    window.saveBranch = saveBranch; window.closeGoalModal = closeGoalModal;
+    window.deleteBranch = deleteBranch; window.setQuickFilter = setQuickFilter;
+    window.updateAmountInput = updateAmountInput; window.clearFilters = clearFilters;
+    window.loadKPIData = loadKPIData; window.deleteDataByDate = deleteDataByDate;
+    window.exportToPDF = exportToPDF; window.exportToExcel = exportToExcel;
     window.resetChart = resetChart;
 
     checkPermissions();
     loadData();
     
-    // ປັບຂະໜາດ Chart ເວລາຫຍໍ້/ຂະຫຍາຍໜ້າຈໍ
     window.onresize = () => { 
         charts.area?.resize(); charts.donut?.resize(); charts.bar?.resize(); kpiChart?.resize();
     };
@@ -141,10 +131,7 @@ function switchPageView(page) {
 function checkPermissions() {
     if (currentUserRole === 'viewer') {
         const lockButton = (selector) => { document.querySelectorAll(selector).forEach(el => { el.style.opacity = '0.4'; el.style.pointerEvents = 'none'; }); };
-        lockButton('#upload-trigger'); 
-        lockButton('#manage-branches-btn'); 
-        lockButton('.btn-export.excel'); 
-        lockButton('.btn-icon-small.delete');
+        lockButton('#upload-trigger'); lockButton('#manage-branches-btn'); lockButton('.btn-export.excel'); lockButton('.btn-icon-small.delete');
     }
 }
 
@@ -176,8 +163,7 @@ async function loadData() {
         const { data: settings } = await _supabase.from('branch_settings').select('*').eq('campaign_type', currentActivePage);
         dynamicBranchSettings = (settings || []).map(s => ({ ...s, branch_name: (s.branch_name || '').trim() }));
         
-        updateBranchDropdown(); 
-        applyFilters(); 
+        updateBranchDropdown(); applyFilters(); 
     } catch (err) {
         console.error("Load Error:", err);
     } finally { hideLoading(); }
@@ -192,8 +178,7 @@ async function fetchYearEnd2025() {
             if (data && data.length > 0) allRows = allRows.concat(data);
             if (!data || data.length < 1000) hasMore = false; else { from += 1000; to += 1000; }
         }
-        yearEnd2025Data = {}; 
-        const unique2025 = new Map();
+        yearEnd2025Data = {}; const unique2025 = new Map();
         allRows.forEach(item => unique2025.set(item.ascount_no, item));
         unique2025.forEach(item => {
             if (!yearEnd2025Data[item.branch_name]) yearEnd2025Data[item.branch_name] = 0;
@@ -213,12 +198,7 @@ function updateTableHeader() {
 // ==========================================
 function handleApplyFilterClick() {
     showLoading('ກັ່ນຕອງຂໍ້ມູນ...');
-    setTimeout(() => { 
-        applyFilters(); 
-        const tbody = document.getElementById('table-body'); 
-        if(tbody) { tbody.classList.remove('fade-in-table'); void tbody.offsetWidth; tbody.classList.add('fade-in-table'); } 
-        hideLoading(); 
-    }, 300);
+    setTimeout(() => { applyFilters(); const tbody = document.getElementById('table-body'); if(tbody) { tbody.classList.remove('fade-in-table'); void tbody.offsetWidth; tbody.classList.add('fade-in-table'); } hideLoading(); }, 300);
 }
 
 function applyFilters() {
@@ -235,12 +215,7 @@ function applyFilters() {
     updateUI(filtered);
 }
 
-function clearFilters() { 
-    document.getElementById('branch-select').value = 'all'; 
-    document.getElementById('start-date').value = ''; 
-    document.getElementById('end-date').value = ''; 
-    applyFilters(); 
-}
+function clearFilters() { document.getElementById('branch-select').value = 'all'; document.getElementById('start-date').value = ''; document.getElementById('end-date').value = ''; applyFilters(); }
 
 function updateUI(filteredData) {
     const uniqueMap = new Map();
@@ -265,7 +240,7 @@ function renderMainTable(tableData) {
     if (!tbody) return;
     
     let allBranches = [...new Set([ ...rawData.map(d => d.branch_name), ...dynamicBranchSettings.map(s => s.branch_name) ])];
-    allBranches.sort((a, b) => a.localeCompare(b, 'lo'));
+    sortBranchesCustom(allBranches);
 
     let TB=0, TP=0, TO=0, TC=0, TD25=0, TDP=0, TDO=0;
     
@@ -365,6 +340,8 @@ async function loadBranchSettings() {
         }
 
         const branches = Object.keys(grouped);
+        sortBranchesCustom(branches);
+        
         tbody.innerHTML = branches.length === 0 ? `<tr><td colspan="${years.length + 2}" style="text-align:center; padding:20px; color:var(--text-muted);">ບໍ່ມີຂໍ້ມູນ</td></tr>` : 
             branches.map(branch => {
                 let tdHtml = `<td style="font-weight: 500;">${branch}</td>`;
@@ -379,31 +356,19 @@ async function loadBranchSettings() {
 }
 
 async function saveBranch() {
-    const name = document.getElementById('branch-name').value.trim(); 
-    const year = parseInt(document.getElementById('select-year').value); 
-    const amount = parseFloat(document.getElementById('input-amount').value || 0);
-    
+    const name = document.getElementById('branch-name').value.trim(); const year = parseInt(document.getElementById('select-year').value); const amount = parseFloat(document.getElementById('input-amount').value || 0);
     if (!name) return alert("ກະລຸນາປ້ອນຊື່ສາຂາ!");
     try {
         const { data: existing } = await _supabase.from('branch_settings').select('id').eq('branch_name', name).eq('target_year', year).eq('campaign_type', currentActivePage).maybeSingle();
         const payload = { branch_name: name, target_year: year, target_amount: amount, campaign_type: currentActivePage };
-        if (existing) await _supabase.from('branch_settings').update(payload).eq('id', existing.id); 
-        else await _supabase.from('branch_settings').insert(payload);
-        
-        document.getElementById('branch-name').value = ''; 
-        document.getElementById('input-amount').value = ''; 
-        await loadBranchSettings(); 
-        loadData(); 
+        if (existing) await _supabase.from('branch_settings').update(payload).eq('id', existing.id); else await _supabase.from('branch_settings').insert(payload);
+        document.getElementById('branch-name').value = ''; document.getElementById('input-amount').value = ''; await loadBranchSettings(); loadData(); 
     } catch (err) { alert("Error: " + err.message); }
 }
 
 async function deleteBranch(branchName) {
     if(!confirm(`ຢືນຢັນລົບສາຂາ "${branchName}"?`)) return;
-    try { 
-        await _supabase.from('branch_settings').delete().eq('branch_name', branchName).eq('campaign_type', currentActivePage); 
-        await loadBranchSettings(); 
-        loadData(); 
-    } catch (err) { alert(err.message); }
+    try { await _supabase.from('branch_settings').delete().eq('branch_name', branchName).eq('campaign_type', currentActivePage); await loadBranchSettings(); loadData(); } catch (err) { alert(err.message); }
 }
 
 function updateAmountInput() {
@@ -416,19 +381,16 @@ function updateAmountInput() {
 function closeGoalModal() { document.getElementById('goal-modal').style.display = 'none'; }
 
 function updateBranchDropdown() {
-    const s = document.getElementById('branch-select'); const b = [...new Set(rawData.map(d => d.branch_name))];
+    const s = document.getElementById('branch-select'); 
+    let b = [...new Set(rawData.map(d => d.branch_name))];
+    sortBranchesCustom(b);
     s.innerHTML = '<option value="all">ທັງໝົດ (All Branches)</option>' + b.map(x => `<option value="${x}">${x}</option>`).join('');
 }
 
 function setQuickFilter(type) {
     const today = new Date(); let start = new Date();
-    if (type === 'week') start.setDate(today.getDate() - 7); 
-    if (type === 'month') start.setMonth(today.getMonth(), 1); 
-    if (type === 'year') start.setFullYear(today.getFullYear(), 0, 1);
-    
-    document.getElementById('start-date').value = start.toISOString().split('T')[0]; 
-    document.getElementById('end-date').value = today.toISOString().split('T')[0]; 
-    applyFilters();
+    if (type === 'week') start.setDate(today.getDate() - 7); if (type === 'month') start.setMonth(today.getMonth(), 1); if (type === 'year') start.setFullYear(today.getFullYear(), 0, 1);
+    document.getElementById('start-date').value = start.toISOString().split('T')[0]; document.getElementById('end-date').value = today.toISOString().split('T')[0]; applyFilters();
 }
 
 // ==========================================
@@ -489,7 +451,9 @@ function renderCharts(uniqueData, filteredData) {
     });
 
     // --- 3. Bar Chart (Target vs Actual) ---
-    const branches = [...new Set(dynamicBranchSettings.map(s => s.branch_name))]; 
+    let branches = [...new Set(dynamicBranchSettings.map(s => s.branch_name))]; 
+    sortBranchesCustom(branches);
+
     const targetValues = branches.map(b => {
         const set = dynamicBranchSettings.find(s => s.branch_name === b && s.target_year === 2026);
         return set ? set.target_amount : 0;
@@ -516,11 +480,8 @@ function renderCharts(uniqueData, filteredData) {
 // 8. Upload & Export
 // ==========================================
 async function confirmUpload() {
-    const fileInput = document.getElementById('excel-input'); 
-    const dateKey = document.getElementById('upload-date-select').value;
-    const uploadTypeElem = document.querySelector('input[name="uploadType"]:checked'); 
-    const uploadType = uploadTypeElem ? uploadTypeElem.value : 'UPDATE'; 
-    
+    const fileInput = document.getElementById('excel-input'); const dateKey = document.getElementById('upload-date-select').value;
+    const uploadTypeElem = document.querySelector('input[name="uploadType"]:checked'); const uploadType = uploadTypeElem ? uploadTypeElem.value : 'UPDATE'; 
     if (!fileInput.files.length || !dateKey) return alert("ກະລຸນາເລືອກໄຟລ໌ ແລະ ວັນທີ!");
 
     showLoading('ກຳລັງປະມວນຜົນໄຟລ໌...');
@@ -534,27 +495,16 @@ async function confirmUpload() {
 
             jsonData.forEach(row => {
                 const cleanRow = {}; for (let key in row) cleanRow[String(key).toLowerCase().replace(/[\s_\-\.]/g, '')] = row[key];
-                
                 let branchName = cleanRow['branchname'] || cleanRow['branch'] || row['ສາຂາ'] || 'ບໍ່ລະບຸ';
-                if (branchName.includes('ດອນໜູນ')) branchName = 'ສາຂານ້ອຍດອນໜູນ'; 
-                else if (branchName.includes('ໂພນໄຊ')) branchName = 'ສາຂານ້ອຍໂພນໄຊ'; 
-                else if (branchName.includes('ຊັງຈ້ຽງ')) branchName = 'ສາຂານ້ອຍຊັງຈ້ຽງ'; 
-                else if (branchName.includes('ໜອງໜ່ຽງ')) branchName = 'ສາຂານ້ອຍໜອງໜ່ຽງ'; 
-                else if (branchName.includes('ນະຄອນຫຼວງ')) branchName = 'ສາຂາພາກນະຄອນຫຼວງ';
-                
+                if (branchName.includes('ດອນໜູນ')) branchName = 'ສາຂານ້ອຍດອນໜູນ'; else if (branchName.includes('ໂພນໄຊ')) branchName = 'ສາຂານ້ອຍໂພນໄຊ'; else if (branchName.includes('ຊັງຈ້ຽງ')) branchName = 'ສາຂານ້ອຍຊັງຈ້ຽງ'; else if (branchName.includes('ໜອງໜ່ຽງ')) branchName = 'ສາຂານ້ອຍໜອງໜ່ຽງ'; else if (branchName.includes('ນະຄອນຫຼວງ')) branchName = 'ສາຂາພາກນະຄອນຫຼວງ';
                 let accNo = String(cleanRow['accountno'] || cleanRow['ascountno'] || cleanRow['accno'] || cleanRow['account'] || cleanRow['number'] || row['ເລກບັນຊີ'] || row['ເລກທີບັນຊີ'] || '').trim();
                 if (!accNo) accNo = 'DUMMY_' + Math.floor(Math.random() * 10000000);
-                
                 const custName = cleanRow['customername'] || cleanRow['name'] || row['ຊື່ລູກຄ້າ'] || '';
 
                 let openVal = 0; let closeVal = 0;
-                const hasOpenCol = 'openingbalance' in cleanRow || 'ຍອດເປີດ' in cleanRow; 
-                const hasCloseCol = 'closingbalance' in cleanRow || 'ຍອດປິດ' in cleanRow;
+                const hasOpenCol = 'openingbalance' in cleanRow || 'ຍອດເປີດ' in cleanRow; const hasCloseCol = 'closingbalance' in cleanRow || 'ຍອດປິດ' in cleanRow;
 
-                if (hasOpenCol || hasCloseCol) { 
-                    openVal = parseFloat(String(cleanRow['openingbalance'] || cleanRow['ຍອດເປີດ'] || '0').replace(/,/g, '')) || 0; 
-                    closeVal = parseFloat(String(cleanRow['closingbalance'] || cleanRow['ຍອດປິດ'] || '0').replace(/,/g, '')) || 0; 
-                } 
+                if (hasOpenCol || hasCloseCol) { openVal = parseFloat(String(cleanRow['openingbalance'] || cleanRow['ຍອດເປີດ'] || '0').replace(/,/g, '')) || 0; closeVal = parseFloat(String(cleanRow['closingbalance'] || cleanRow['ຍອດປິດ'] || '0').replace(/,/g, '')) || 0; } 
                 else {
                     let rawAmount = String(cleanRow['balance'] || cleanRow['amount'] || cleanRow['total'] || cleanRow['ຍອດເງິນ'] || cleanRow['ຈຳນວນເງິນ'] || cleanRow['ຍອດຄົງເຫຼືອ'] || '0').replace(/,/g, '');
                     const amountVal = parseFloat(rawAmount) || 0;
@@ -562,135 +512,76 @@ async function confirmUpload() {
                 }
 
                 const uKey = `${accNo}_${dateKey}_${currentActivePage}`;
-                if (!groupedData[uKey]) {
-                    groupedData[uKey] = { branch_name: branchName, ascount_no: accNo, customer_name: custName, campaign_type: currentActivePage, date_key: dateKey, opening_balance: openVal, closing_balance: closeVal };
-                } else { 
-                    groupedData[uKey].opening_balance += openVal; 
-                    groupedData[uKey].closing_balance += closeVal; 
-                }
+                if (!groupedData[uKey]) groupedData[uKey] = { branch_name: branchName, ascount_no: accNo, customer_name: custName, campaign_type: currentActivePage, date_key: dateKey, opening_balance: openVal, closing_balance: closeVal };
+                else { groupedData[uKey].opening_balance += openVal; groupedData[uKey].closing_balance += closeVal; }
             });
 
             const finalPayload = Object.values(groupedData);
             const { error: dataError } = await _supabase.from('bank_data').upsert(finalPayload, { onConflict: 'ascount_no,date_key,campaign_type' });
             if (dataError) throw dataError;
-            
             if(dateKey === '2025-12-31') await fetchYearEnd2025();
-            
             alert(`✅ ສຳເລັດ! ອັບໂຫລດຈຳນວນ ${finalPayload.length} ລາຍການ`);
-            document.getElementById('upload-modal').style.display = 'none'; 
-            rawData = []; 
-            await loadData();
-        } catch (err) { 
-            alert("ເກີດຂໍ້ຜິດພາດ: " + err.message); 
-        } finally { 
-            hideLoading(); 
-            fileInput.value = ''; 
-        }
+            document.getElementById('upload-modal').style.display = 'none'; rawData = []; await loadData();
+        } catch (err) { alert("ເກີດຂໍ້ຜິດພາດ: " + err.message); } finally { hideLoading(); fileInput.value = ''; }
     };
     reader.readAsArrayBuffer(fileInput.files[0]);
 }
 
 async function deleteDataByDate() {
-    const dateKey = document.getElementById('upload-date-select').value; 
-    const branchSelect = document.getElementById('branch-select').value; 
-    
+    const dateKey = document.getElementById('upload-date-select').value; const branchSelect = document.getElementById('branch-select').value; 
     if (!dateKey && branchSelect === 'all') return alert("⚠️ ກະລຸນາເລືອກ 'ວັນທີ' ໃນກ່ອງນີ້ ຫຼື ອອກໄປເລືອກ 'ສາຂາ' ກ່ອນ!");
-    
-    let confirmText = `⚠️ ຢືນຢັນການລຶບຂໍ້ມູນ`; 
-    if(dateKey) confirmText += `\n- ວັນທີ: ${dateKey}`; 
-    if(branchSelect !== 'all') confirmText += `\n- ສະເພາະສາຂາ: ${branchSelect}`;
-    
+    let confirmText = `⚠️ ຢືນຢັນການລຶບຂໍ້ມູນ`; if(dateKey) confirmText += `\n- ວັນທີ: ${dateKey}`; if(branchSelect !== 'all') confirmText += `\n- ສະເພາະສາຂາ: ${branchSelect}`;
     if (!confirm(confirmText)) return;
 
     let query = _supabase.from('bank_data').delete().eq('campaign_type', currentActivePage);
-    if (dateKey) query = query.eq('date_key', dateKey); 
-    if (branchSelect !== 'all') query = query.eq('branch_name', branchSelect);
+    if (dateKey) query = query.eq('date_key', dateKey); if (branchSelect !== 'all') query = query.eq('branch_name', branchSelect);
 
     const { error } = await query;
-    if (error) {
-        alert("Error: " + error.message); 
-    } else { 
-        alert("✅ ລຶບສຳເລັດ!"); 
-        document.getElementById('upload-modal').style.display = 'none'; 
-        rawData = []; 
-        await loadData(); 
-    }
+    if (error) alert("Error: " + error.message); else { alert("✅ ລຶບສຳເລັດ!"); document.getElementById('upload-modal').style.display = 'none'; rawData = []; await loadData(); }
 }
 
 function exportToPDF() {
-    const element = document.getElementById('table-content-area'); 
-    if (!element) return alert("ບໍ່ພົບຂໍ້ມູນ!");
-    
+    const element = document.getElementById('table-content-area'); if (!element) return alert("ບໍ່ພົບຂໍ້ມູນ!");
     const today = new Date().toISOString().slice(0, 10);
     const opt = { margin: [0.2, 0.2, 0.2, 0.2], filename: `Report_${today}.pdf`, image: { type: 'jpeg', quality: 1.0 }, html2canvas: { scale: 2, useCORS: true, backgroundColor: '#1e293b' }, jsPDF: { unit: 'in', format: 'a3', orientation: 'landscape' } };
-    
-    const container = document.createElement('div'); 
-    container.style.backgroundColor = '#1e293b'; 
-    container.style.padding = '20px'; 
-    container.style.color = '#ffffff'; 
+    const container = document.createElement('div'); container.style.backgroundColor = '#1e293b'; container.style.padding = '20px'; container.style.color = '#ffffff'; 
     container.innerHTML = `<h1 style="text-align:center; color:#3b82f6;">ລາຍງານ ປະຈຳວັນທີ: ${today}</h1>`;
-    
     const tableClone = element.cloneNode(true);
-    const ths = tableClone.querySelectorAll('th'); 
-    ths.forEach(th => { th.style.backgroundColor = '#0f172a'; th.style.color = '#fbbf24'; th.style.border = '1px solid #334155'; });
-    const tds = tableClone.querySelectorAll('td'); 
-    tds.forEach(td => { td.style.borderBottom = '1px solid #334155'; if (!td.style.color) td.style.color = '#ffffff'; });
-    
+    const ths = tableClone.querySelectorAll('th'); ths.forEach(th => { th.style.backgroundColor = '#0f172a'; th.style.color = '#fbbf24'; th.style.border = '1px solid #334155'; });
+    const tds = tableClone.querySelectorAll('td'); tds.forEach(td => { td.style.borderBottom = '1px solid #334155'; if (!td.style.color) td.style.color = '#ffffff'; });
     container.appendChild(tableClone);
     html2pdf().set(opt).from(container).save();
 }
 
 function exportToExcel() {
-    const branch = document.getElementById('branch-select').value; 
-    let filtered = rawData;
+    const branch = document.getElementById('branch-select').value; let filtered = rawData;
     if (branch !== 'all') filtered = filtered.filter(d => d.branch_name === branch);
-    
     if (filtered.length === 0) return alert("ບໍ່ມີຂໍ້ມູນ!");
-    
-    const uniqueMap = new Map(); 
-    filtered.forEach(item => { const existing = uniqueMap.get(item.ascount_no); if (!existing || item.date_key > existing.date_key) uniqueMap.set(item.ascount_no, item); });
-    
+    const uniqueMap = new Map(); filtered.forEach(item => { const existing = uniqueMap.get(item.ascount_no); if (!existing || item.date_key > existing.date_key) uniqueMap.set(item.ascount_no, item); });
     const excelData = Array.from(uniqueMap.values()).map((item, index) => ({ "ລ/ດ": index + 1, "ສາຂາ": item.branch_name, "ເລກບັນຊີ": item.ascount_no, "ຍອດຄົງເຫຼືອ": item.closing_balance }));
-    const worksheet = XLSX.utils.json_to_sheet(excelData); 
-    const workbook = XLSX.utils.book_new(); 
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Report"); 
-    XLSX.writeFile(workbook, `Report_${currentActivePage}.xlsx`);
+    const worksheet = XLSX.utils.json_to_sheet(excelData); const workbook = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(workbook, worksheet, "Report"); XLSX.writeFile(workbook, `Report_${currentActivePage}.xlsx`);
 }
 
 // ==========================================
 // 9. KPI Logic
 // ==========================================
 async function loadKPIData() {
-    const empName = document.getElementById('kpi-employee-select').value; 
-    const month = document.getElementById('kpi-month-select').value;
-    
+    const empName = document.getElementById('kpi-employee-select').value; const month = document.getElementById('kpi-month-select').value;
     if(!empName || !month) return;
-    
     const { data, error } = await _supabase.from('marketing_kpi').select('*').eq('employee_name', empName).eq('kpi_month', month).single();
 
     if (error || !data) {
         document.getElementById('kpi-table-body').innerHTML = `<tr><td colspan="5" style="text-align:center; padding:20px;">ບໍ່ພົບຂໍ້ມູນ</td></tr>`;
-        document.getElementById('kpi-total-score').innerText = "0%"; 
-        document.getElementById('kpi-status').innerText = "-";
-        updateRadarChart([0, 0, 0]); 
-        return;
+        document.getElementById('kpi-total-score').innerText = "0%"; document.getElementById('kpi-status').innerText = "-";
+        updateRadarChart([0, 0, 0]); return;
     }
 
-    const depPct = calculatePercent(data.actual_deposit, data.target_deposit); 
-    const accPct = calculatePercent(data.actual_new_acc, data.target_new_acc); 
-    const visitPct = calculatePercent(data.actual_visit, data.target_visit);
-    
+    const depPct = calculatePercent(data.actual_deposit, data.target_deposit); const accPct = calculatePercent(data.actual_new_acc, data.target_new_acc); const visitPct = calculatePercent(data.actual_visit, data.target_visit);
     const totalScore = (depPct * 0.5) + (accPct * 0.3) + (visitPct * 0.2);
     document.getElementById('kpi-total-score').innerText = totalScore.toFixed(1) + "%";
-    
-    const statusEl = document.getElementById('kpi-status'); 
-    let color = '#ef4444'; let text = "ຕ້ອງປັບປຸງ";
-    if(totalScore >= 100) { color = '#10b981'; text = "ດີເລີດ"; } 
-    else if(totalScore >= 80) { color = '#3b82f6'; text = "ດີ"; } 
-    else if(totalScore >= 60) { color = '#f59e0b'; text = "ປານກາງ"; }
-    
-    statusEl.innerText = text; 
-    statusEl.style.color = color;
+    const statusEl = document.getElementById('kpi-status'); let color = '#ef4444'; let text = "ຕ້ອງປັບປຸງ";
+    if(totalScore >= 100) { color = '#10b981'; text = "ດີເລີດ"; } else if(totalScore >= 80) { color = '#3b82f6'; text = "ດີ"; } else if(totalScore >= 60) { color = '#f59e0b'; text = "ປານກາງ"; }
+    statusEl.innerText = text; statusEl.style.color = color;
 
     document.getElementById('kpi-table-body').innerHTML = `
         <tr><td>ຍອດເງິນຝາກ</td><td align="right">${Number(data.target_deposit).toLocaleString()}</td><td align="right">${Number(data.actual_deposit).toLocaleString()}</td><td align="center" style="color:${getColor(depPct)}">${depPct.toFixed(1)}%</td><td align="center">${(depPct * 0.5).toFixed(1)}</td></tr>
@@ -699,31 +590,9 @@ async function loadKPIData() {
     `;
     updateRadarChart([depPct, accPct, visitPct]);
 }
-
-function calculatePercent(actual, target) { 
-    if(!target || target == 0) return 0; 
-    let pct = (actual / target) * 100; 
-    return pct > 120 ? 120 : pct; 
-}
-
-function getColor(pct) { 
-    if(pct >= 100) return '#10b981'; 
-    if(pct >= 80) return '#3b82f6'; 
-    if(pct >= 60) return '#f59e0b'; 
-    return '#ef4444'; 
-}
-
+function calculatePercent(actual, target) { if(!target || target == 0) return 0; let pct = (actual / target) * 100; return pct > 120 ? 120 : pct; }
+function getColor(pct) { if(pct >= 100) return '#10b981'; if(pct >= 80) return '#3b82f6'; if(pct >= 60) return '#f59e0b'; return '#ef4444'; }
 function updateRadarChart(dataArr) {
     if(!kpiChart) kpiChart = echarts.init(document.getElementById('kpiRadarChart'));
-    kpiChart.setOption({ 
-        radar: { 
-            indicator: [{ name: 'ເງິນຝາກ', max: 120 }, { name: 'ບັນຊີໃໝ່', max: 120 }, { name: 'ຢ້ຽມຢາມ', max: 120 }], 
-            splitArea: { areaStyle: { color: ['#1e293b'] } }, 
-            axisName: { color: '#fff' } 
-        }, 
-        series: [{ 
-            type: 'radar', 
-            data: [{ value: dataArr, name: 'Performance', itemStyle: { color: '#3b82f6' }, areaStyle: { opacity: 0.3 } }] 
-        }] 
-    });
+    kpiChart.setOption({ radar: { indicator: [{ name: 'ເງິນຝາກ', max: 120 }, { name: 'ບັນຊີໃໝ່', max: 120 }, { name: 'ຢ້ຽມຢາມ', max: 120 }], splitArea: { areaStyle: { color: ['#1e293b'] } }, axisName: { color: '#fff' } }, series: [{ type: 'radar', data: [{ value: dataArr, name: 'Performance', itemStyle: { color: '#3b82f6' }, areaStyle: { opacity: 0.3 } }] }] });
 }
