@@ -61,7 +61,12 @@ function performLogin() {
 
 function showLoading(text = 'ກຳລັງປະມວນຜົນ...') {
     const loader = document.getElementById('loading-overlay');
-    if(loader) { loader.style.display = 'flex'; void loader.offsetWidth; loader.style.opacity = '1'; }
+    if(loader) { 
+        document.getElementById('loading-text').innerText = text;
+        loader.style.display = 'flex'; 
+        void loader.offsetWidth; 
+        loader.style.opacity = '1'; 
+    }
 }
 
 function hideLoading() {
@@ -616,81 +621,73 @@ function exportToPDF() {
     else if (currentActivePage === 'BEERLAO') pdfTitle += " ເບຍລາວ";
     else if (currentActivePage === 'CAMPAIGN') pdfTitle += " ລູກຄ້າແຄມແປນ";
 
-    // 1. ສ້າງ Iframe ທີ່ຖືກເຊື່ອງໄວ້ (ເພື່ອບໍ່ໃຫ້ມີ Popup ເດັ້ງຂຶ້ນມາໂຊ)
-    const iframe = document.createElement('iframe');
-    iframe.style.position = 'absolute';
-    iframe.style.width = '0px';
-    iframe.style.height = '0px';
-    iframe.style.border = 'none';
-    document.body.appendChild(iframe);
+    // 1. ສ້າງ Container ແທ້ໆເທິງໜ້າຈໍ ແຕ່ເອົາໄວ້ກ້ອງ Loading (ເພື່ອໃຫ້ html2canvas ເຫັນພາບ)
+    const printContainer = document.createElement('div');
+    printContainer.style.position = 'absolute';
+    printContainer.style.top = '0';
+    printContainer.style.left = '0';
+    printContainer.style.width = '1400px'; 
+    printContainer.style.minHeight = '100vh';
+    printContainer.style.backgroundColor = '#0b1120'; // ສີດຳ
+    printContainer.style.padding = '40px';
+    printContainer.style.zIndex = '90000'; // ຢູ່ກ້ອງ Loading Screen ທີ່ເປັນ 99999
+    printContainer.style.fontFamily = "'Noto Sans Lao', sans-serif";
 
-    const iframeDoc = iframe.contentWindow.document;
+    const titleEl = document.createElement('h2');
+    titleEl.innerText = `ລາຍລະອຽດຂໍ້ມູນ ${pdfTitle} (ວັນທີ: ${today})`;
+    titleEl.style.textAlign = 'center';
+    titleEl.style.color = '#3b82f6';
+    titleEl.style.marginBottom = '20px';
+    printContainer.appendChild(titleEl);
 
-    // 2. ຂຽນໂຄດ HTML ພ້ອມ CSS ເຂົ້າໄປໃນ Iframe ໂດຍ Load Font ມາຈາກ Google Fonts
-    iframeDoc.write(`
-        <html>
-        <head>
-            <title>${pdfTitle}_${today}</title>
-            <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Lao:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-            <style>
-                body { 
-                    font-family: 'Noto Sans Lao', sans-serif !important; 
-                    background-color: #0b1120; 
-                    color: #ffffff; 
-                    padding: 20px; 
-                    -webkit-print-color-adjust: exact !important; 
-                    print-color-adjust: exact !important;
-                }
-                h2 { 
-                    text-align: center; 
-                    color: #3b82f6; 
-                    margin-bottom: 20px; 
-                }
-                table { 
-                    width: 100%; 
-                    border-collapse: collapse; 
-                    margin: 0 auto; 
-                }
-                th { 
-                    background-color: #1f2937; 
-                    color: #fbbf24 !important; 
-                    border: 1px solid #374151; 
-                    padding: 12px; 
-                }
-                td { 
-                    border: 1px solid #374151; 
-                    padding: 12px; 
-                    color: #ffffff !important; 
-                }
-                @media print {
-                    @page { size: landscape; margin: 10mm; }
-                    body { 
-                        -webkit-print-color-adjust: exact !important; 
-                        print-color-adjust: exact !important; 
-                    }
-                }
-            </style>
-        </head>
-        <body>
-            <h2>ລາຍລະອຽດຂໍ້ມູນ ${pdfTitle} (ວັນທີ: ${today})</h2>
-            ${tableEl.outerHTML}
-        </body>
-        </html>
-    `);
-    iframeDoc.close();
+    const tableClone = tableEl.cloneNode(true);
+    tableClone.style.width = '100%';
+    tableClone.style.borderCollapse = 'collapse';
 
-    // 3. ລໍຖ້າໃຫ້ Font ໂຫຼດສຳເລັດ ແລ້ວຈຶ່ງສັ່ງ Print ແບບງຽບໆພາຍໃນ Iframe
+    // ບັງຄັບສີຢ່າງເດັດຂາດໃນທຸກໆຖັນ (ປ້ອງກັນສີດຳລ້ວນ)
+    tableClone.querySelectorAll('th').forEach(th => {
+        th.style.backgroundColor = '#1f2937';
+        th.style.border = '1px solid #374151';
+        th.style.padding = '12px';
+        th.style.color = '#fbbf24';
+        th.style.fontSize = '14px';
+    });
+
+    tableClone.querySelectorAll('td').forEach(td => {
+        td.style.border = '1px solid #374151';
+        td.style.padding = '12px';
+        td.style.color = '#ffffff';
+        td.style.fontSize = '14px';
+    });
+
+    printContainer.appendChild(tableClone);
+    document.body.appendChild(printContainer);
+
+    const opt = {
+        margin:       0.3,
+        filename:     `${pdfTitle.replace(/\s+/g, '_')}_${today}.pdf`,
+        image:        { type: 'jpeg', quality: 1.0 },
+        html2canvas:  { 
+            scale: 2, 
+            useCORS: true, 
+            backgroundColor: '#0b1120',
+            windowWidth: 1400
+        },
+        jsPDF:        { unit: 'in', format: 'a3', orientation: 'landscape' }
+    };
+
+    // 2. ລໍຖ້າໃຫ້ Browser ວາດພາບອອກມາສຳເລັດ 500ms ແລ້ວຈຶ່ງໂຫຼດ PDF (ສຳຄັນຫຼາຍ ປ້ອງກັນຈໍຂາວ/ດຳ)
     setTimeout(() => {
-        iframe.contentWindow.focus();
-        iframe.contentWindow.print();
-        
-        // ເມື່ອ Print ສຳເລັດແລ້ວ ໃຫ້ລຶບ Iframe ຖິ້ມ ເພື່ອບໍ່ໃຫ້ໜັກເຄື່ອງ
-        setTimeout(() => {
-            document.body.removeChild(iframe);
+        html2pdf().set(opt).from(printContainer).save().then(() => {
+            document.body.removeChild(printContainer);
             hideLoading();
-        }, 1000); 
-
-    }, 1500); // ປະໄວ້ 1.5 ວິນາທີ ເພື່ອຮັບປະກັນວ່າ Google Fonts ຖືກໂຫຼດແລ້ວ
+        }).catch(err => {
+            console.error(err);
+            document.body.removeChild(printContainer);
+            hideLoading();
+            alert("ເກີດຂໍ້ຜິດພາດໃນການສ້າງ PDF: " + err.message);
+        });
+    }, 500);
 }
 
 function exportToExcel() {
