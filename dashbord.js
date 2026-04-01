@@ -61,12 +61,7 @@ function performLogin() {
 
 function showLoading(text = 'ກຳລັງປະມວນຜົນ...') {
     const loader = document.getElementById('loading-overlay');
-    if(loader) { 
-        document.getElementById('loading-text').innerText = text;
-        loader.style.display = 'flex'; 
-        void loader.offsetWidth; 
-        loader.style.opacity = '1'; 
-    }
+    if(loader) { loader.style.display = 'flex'; void loader.offsetWidth; loader.style.opacity = '1'; }
 }
 
 function hideLoading() {
@@ -609,85 +604,79 @@ async function deleteDataByDate() {
     if (error) alert("Error: " + error.message); else { alert("✅ ລຶບສຳເລັດ!"); document.getElementById('upload-modal').style.display = 'none'; rawData = []; await loadData(); }
 }
 
+// ຟັງຊັນ Export PDF ແບບດາວໂຫຼດໂດຍກົງ (ບໍ່ມີໜ້າ Print ຂຶ້ນກວນ) + ເຫັນຕົວໜັງສືຄົບຖ້ວນ
 function exportToPDF() {
-    const tableEl = document.getElementById('branch-table');
-    if (!tableEl) return alert("ບໍ່ພົບຂໍ້ມູນທີ່ຈະດາວໂຫຼດ!");
-
+    const tableCard = document.querySelector('#branch-table').closest('.card');
+    if (!tableCard) return alert("ບໍ່ພົບຂໍ້ມູນທີ່ຈະດາວໂຫຼດ!");
+    
     showLoading('ກຳລັງສ້າງໄຟລ໌ PDF...');
-
+    
     const today = new Date().toISOString().slice(0, 10);
     let pdfTitle = "ລາຍງານ";
     if (currentActivePage === 'PUPOM') pdfTitle += " ປູພົມ";
     else if (currentActivePage === 'BEERLAO') pdfTitle += " ເບຍລາວ";
     else if (currentActivePage === 'CAMPAIGN') pdfTitle += " ລູກຄ້າແຄມແປນ";
 
-    // 1. ສ້າງ Container ແທ້ໆເທິງໜ້າຈໍ ແຕ່ເອົາໄວ້ກ້ອງ Loading (ເພື່ອໃຫ້ html2canvas ເຫັນພາບ)
-    const printContainer = document.createElement('div');
-    printContainer.style.position = 'absolute';
-    printContainer.style.top = '0';
-    printContainer.style.left = '0';
-    printContainer.style.width = '1400px'; 
-    printContainer.style.minHeight = '100vh';
-    printContainer.style.backgroundColor = '#0b1120'; // ສີດຳ
-    printContainer.style.padding = '40px';
-    printContainer.style.zIndex = '90000'; // ຢູ່ກ້ອງ Loading Screen ທີ່ເປັນ 99999
-    printContainer.style.fontFamily = "'Noto Sans Lao', sans-serif";
+    // 1. ເຊື່ອງປຸ່ມ Action ຊົ່ວຄາວ ເພື່ອບໍ່ໃຫ້ຕິດໄປນຳໃນ PDF
+    const actionBtns = tableCard.querySelector('.action-buttons');
+    if (actionBtns) actionBtns.style.display = 'none';
 
-    const titleEl = document.createElement('h2');
-    titleEl.innerText = `ລາຍລະອຽດຂໍ້ມູນ ${pdfTitle} (ວັນທີ: ${today})`;
-    titleEl.style.textAlign = 'center';
-    titleEl.style.color = '#3b82f6';
-    titleEl.style.marginBottom = '20px';
-    printContainer.appendChild(titleEl);
+    // 2. ປ່ຽນຫົວຂໍ້ເປັນຮູບແບບທີ່ເໝາະສົມສຳລັບລາຍງານ
+    const headerTitle = tableCard.querySelector('#table-section-title');
+    const originalTitle = headerTitle ? headerTitle.innerText : '';
+    if (headerTitle) {
+        headerTitle.innerText = `ລາຍລະອຽດຂໍ້ມູນ ${pdfTitle} (ວັນທີ: ${today})`;
+        headerTitle.style.color = '#3b82f6';
+    }
 
-    const tableClone = tableEl.cloneNode(true);
-    tableClone.style.width = '100%';
-    tableClone.style.borderCollapse = 'collapse';
+    // 3. ບັງຄັບສີພື້ນຫຼັງ ແລະ ສີຕົວໜັງສືແບບ Inline (ສຳຄັນຫຼາຍສຳລັບແກ້ບັນຫາໜ້າຈໍດຳ/ຕົວໜັງສືຫາຍ)
+    const originalBg = tableCard.style.backgroundColor;
+    const originalColor = tableCard.style.color;
+    tableCard.style.backgroundColor = '#111827';
+    tableCard.style.color = '#ffffff';
+    
+    // ປົດລັອກ Scroll
+    const responsiveDiv = tableCard.querySelector('.table-responsive');
+    const originalOverflow = responsiveDiv ? responsiveDiv.style.overflowX : '';
+    if (responsiveDiv) responsiveDiv.style.overflowX = 'visible';
 
-    // ບັງຄັບສີຢ່າງເດັດຂາດໃນທຸກໆຖັນ (ປ້ອງກັນສີດຳລ້ວນ)
-    tableClone.querySelectorAll('th').forEach(th => {
-        th.style.backgroundColor = '#1f2937';
-        th.style.border = '1px solid #374151';
-        th.style.padding = '12px';
-        th.style.color = '#fbbf24';
-        th.style.fontSize = '14px';
-    });
-
-    tableClone.querySelectorAll('td').forEach(td => {
-        td.style.border = '1px solid #374151';
-        td.style.padding = '12px';
-        td.style.color = '#ffffff';
-        td.style.fontSize = '14px';
-    });
-
-    printContainer.appendChild(tableClone);
-    document.body.appendChild(printContainer);
-
-    const opt = {
+    // ຕັ້ງຄ່າ html2pdf ໂດຍໃຊ້ສີດຳ (#111827) ເປັນພື້ນຫຼັງ
+    const opt = { 
         margin:       0.3,
         filename:     `${pdfTitle.replace(/\s+/g, '_')}_${today}.pdf`,
         image:        { type: 'jpeg', quality: 1.0 },
-        html2canvas:  { 
-            scale: 2, 
-            useCORS: true, 
-            backgroundColor: '#0b1120',
-            windowWidth: 1400
-        },
+        html2canvas:  { scale: 2, useCORS: true, backgroundColor: '#111827' }, 
         jsPDF:        { unit: 'in', format: 'a3', orientation: 'landscape' }
     };
 
-    // 2. ລໍຖ້າໃຫ້ Browser ວາດພາບອອກມາສຳເລັດ 500ms ແລ້ວຈຶ່ງໂຫຼດ PDF (ສຳຄັນຫຼາຍ ປ້ອງກັນຈໍຂາວ/ດຳ)
-    setTimeout(() => {
-        html2pdf().set(opt).from(printContainer).save().then(() => {
-            document.body.removeChild(printContainer);
-            hideLoading();
-        }).catch(err => {
-            console.error(err);
-            document.body.removeChild(printContainer);
-            hideLoading();
-            alert("ເກີດຂໍ້ຜິດພາດໃນການສ້າງ PDF: " + err.message);
-        });
-    }, 500);
+    // ສັ່ງໃຫ້ html2pdf ຖ່າຍພາບຈາກຕາຕະລາງເທິງໜ້າຈໍໂດຍກົງ (ແລ້ວດາວໂຫຼດ)
+    html2pdf().set(opt).from(tableCard).save().then(() => {
+        // ກູ້ຄືນສະພາບເດີມຫຼັງໂຫຼດສຳເລັດ
+        if (actionBtns) actionBtns.style.display = 'flex';
+        if (headerTitle) {
+            headerTitle.innerText = originalTitle;
+            headerTitle.style.color = '';
+        }
+        tableCard.style.backgroundColor = originalBg;
+        tableCard.style.color = originalColor;
+        if (responsiveDiv) responsiveDiv.style.overflowX = originalOverflow;
+        
+        hideLoading();
+    }).catch(err => {
+        console.error(err);
+        // ກູ້ຄືນສະພາບເດີມເຖິງຈະມີ Error ກໍຕາມ
+        if (actionBtns) actionBtns.style.display = 'flex';
+        if (headerTitle) {
+            headerTitle.innerText = originalTitle;
+            headerTitle.style.color = '';
+        }
+        tableCard.style.backgroundColor = originalBg;
+        tableCard.style.color = originalColor;
+        if (responsiveDiv) responsiveDiv.style.overflowX = originalOverflow;
+        
+        hideLoading();
+        alert("ເກີດຂໍ້ຜິດພາດໃນການສ້າງ PDF: " + err.message);
+    });
 }
 
 function exportToExcel() {
