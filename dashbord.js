@@ -604,101 +604,132 @@ async function deleteDataByDate() {
     if (error) alert("Error: " + error.message); else { alert("✅ ລຶບສຳເລັດ!"); document.getElementById('upload-modal').style.display = 'none'; rawData = []; await loadData(); }
 }
 
-// ຟັງຊັນ Export PDF ທີ່ແກ້ບັນຫາໜ້າຈໍດຳ ແລະ ຕົວໜັງສືຫາຍ 100%
+// ຟັງຊັນ Export PDF ຂັ້ນສູງສຸດ ບັງຄັບການແປງສີເພື່ອແກ້ໄຂບັນຫາໜ້າຈໍດຳ/ຕົວໜັງສືຫາຍ
 function exportToPDF() {
+    if (typeof html2pdf === 'undefined') {
+        return alert("ບຣາວເຊີຂອງທ່ານປິດກັ້ນການໂຫຼດ PDF (Tracking Prevention).\nກະລຸນາກົດປິດການປ້ອງກັນສຳລັບເວັບນີ້ (ຮູບໄສ້ກັ່ນຕອງເທິງແຖບ URL) ແລ້ວລອງໃໝ່.");
+    }
+
     const tableCard = document.querySelector('#branch-table').closest('.card');
     if (!tableCard) return alert("ບໍ່ພົບຂໍ້ມູນທີ່ຈະດາວໂຫຼດ!");
     
     showLoading('ກຳລັງສ້າງໄຟລ໌ PDF...');
     
-    const today = new Date().toISOString().slice(0, 10);
-    let pdfTitle = "ລາຍງານ";
-    if (currentActivePage === 'PUPOM') pdfTitle += " ປູພົມ";
-    else if (currentActivePage === 'BEERLAO') pdfTitle += " ເບຍລາວ";
-    else if (currentActivePage === 'CAMPAIGN') pdfTitle += " ລູກຄ້າແຄມແປນ";
+    // ໜ່ວງເວລາໜ້ອຍໜຶ່ງໃຫ້ Loading Screen ຂຶ້ນມາກ່ອນ
+    setTimeout(() => {
+        const today = new Date().toISOString().slice(0, 10);
+        let pdfTitle = "ລາຍງານ";
+        if (currentActivePage === 'PUPOM') pdfTitle += " ປູພົມ";
+        else if (currentActivePage === 'BEERLAO') pdfTitle += " ເບຍລາວ";
+        else if (currentActivePage === 'CAMPAIGN') pdfTitle += " ລູກຄ້າແຄມແປນ";
 
-    // 1. ເຊື່ອງປຸ່ມ Action ຊົ່ວຄາວ ເພື່ອບໍ່ໃຫ້ຕິດໄປນຳໃນ PDF
-    const actionBtns = tableCard.querySelector('.action-buttons');
-    if (actionBtns) actionBtns.style.display = 'none';
+        // 1. ເຊື່ອງປຸ່ມ Action
+        const actionBtns = tableCard.querySelector('.action-buttons');
+        const originalActionDisplay = actionBtns ? actionBtns.style.display : '';
+        if (actionBtns) actionBtns.style.display = 'none';
 
-    // 2. ປ່ຽນຫົວຂໍ້ເປັນຮູບແບບທີ່ເໝາະສົມສຳລັບລາຍງານ
-    const headerTitle = tableCard.querySelector('#table-section-title');
-    const originalTitle = headerTitle ? headerTitle.innerText : '';
-    if (headerTitle) {
-        headerTitle.innerText = `ລາຍລະອຽດຂໍ້ມູນ ${pdfTitle} (ວັນທີ: ${today})`;
-    }
-
-    // 3. ບັງຄັບສີ Inline ໃຫ້ທຸກ Text Elements ທີ່ຢູ່ພາຍໃນ Card ເພື່ອປ້ອງກັນ html2canvas ເບິ່ງບໍ່ເຫັນສີ CSS Variables
-    const allTextElements = tableCard.querySelectorAll('th, td, h3, span, p, div');
-    const originalStyles = [];
-
-    allTextElements.forEach((el) => {
-        // ເກັບຄ່າສີເກົ່າໄວ້
-        originalStyles.push({
-            el: el,
-            color: el.style.color,
-            backgroundColor: el.style.backgroundColor
-        });
-
-        // ຖ້າບໍ່ມີການກຳນົດສີແບບ Inline ໄວ້ (ຫຼືໃຊ້ CSS var) ໃຫ້ບັງຄັບເປັນສີຂາວແຈ້ງໆ
-        if (!el.style.color || el.style.color === '' || el.style.color.includes('var')) {
-            el.style.color = '#ffffff'; 
+        // 2. ປ່ຽນຫົວຂໍ້
+        const headerTitle = tableCard.querySelector('#table-section-title');
+        const originalTitle = headerTitle ? headerTitle.innerText : '';
+        if (headerTitle) {
+            headerTitle.innerText = `ລາຍລະອຽດຂໍ້ມູນ ${pdfTitle} (ວັນທີ: ${today})`;
         }
+
+        // 3. ປົດລັອກ Scroll ບໍ່ໃຫ້ມັນຕັດຂອບ
+        const responsiveDiv = tableCard.querySelector('.table-responsive');
+        const originalOverflow = responsiveDiv ? responsiveDiv.style.overflowX : '';
+        if (responsiveDiv) responsiveDiv.style.overflowX = 'visible';
+
+        // =========================================================================
+        // 🚨 ເຕັກນິກສຳຄັນ: ບັງຄັບແປງ CSS Variables ໃຫ້ເປັນຄ່າສີແທ້ໆ 🚨
+        // =========================================================================
+        const originalStyles = new Map();
+        const allElements = tableCard.querySelectorAll('*');
         
-        // ບັງຄັບສີພື້ນຫຼັງໃຫ້ຫົວຕາຕະລາງ
-        if (el.tagName === 'TH') {
-            el.style.backgroundColor = '#1f2937';
-        }
-    });
-
-    // ບັງຄັບສີພື້ນຫຼັງ Card ເປັນສີດຳ
-    const originalCardBg = tableCard.style.backgroundColor;
-    tableCard.style.backgroundColor = '#111827'; 
-    
-    // ປົດລັອກ Scroll ບໍ່ໃຫ້ມັນຕັດຂອບ
-    const responsiveDiv = tableCard.querySelector('.table-responsive');
-    const originalOverflow = responsiveDiv ? responsiveDiv.style.overflowX : '';
-    if (responsiveDiv) responsiveDiv.style.overflowX = 'visible';
-
-    // ຕັ້ງຄ່າ html2pdf
-    const opt = { 
-        margin:       0.3,
-        filename:     `${pdfTitle.replace(/\s+/g, '_')}_${today}.pdf`,
-        image:        { type: 'jpeg', quality: 1.0 },
-        html2canvas:  { scale: 2, useCORS: true, backgroundColor: '#111827', logging: false }, 
-        jsPDF:        { unit: 'in', format: 'a3', orientation: 'landscape' }
-    };
-
-    // ສັ່ງໃຫ້ html2pdf ຖ່າຍພາບຈາກໜ້າຈໍແທ້ໆ
-    html2pdf().set(opt).from(tableCard).save().then(() => {
-        // ກູ້ຄືນສະພາບເດີມ
-        if (actionBtns) actionBtns.style.display = 'flex';
-        if (headerTitle) headerTitle.innerText = originalTitle;
-        if (responsiveDiv) responsiveDiv.style.overflowX = originalOverflow;
-        tableCard.style.backgroundColor = originalCardBg;
-
-        originalStyles.forEach(item => {
-            item.el.style.color = item.color;
-            item.el.style.backgroundColor = item.backgroundColor;
+        // ເກັບຄ່າສີທີ່ແທ້ຈິງທີ່ບຣາວເຊີກຳລັງສະແດງຜົນຢູ່ (Computed Style)
+        allElements.forEach(el => {
+            const comp = window.getComputedStyle(el);
+            originalStyles.set(el, {
+                color: el.style.color,
+                backgroundColor: el.style.backgroundColor,
+                borderColor: el.style.borderColor,
+                fontFamily: el.style.fontFamily,
+                compColor: comp.color,
+                compBg: comp.backgroundColor,
+                compBorder: comp.borderColor
+            });
         });
-        
-        hideLoading();
-    }).catch(err => {
-        console.error(err);
-        // ກູ້ຄືນສະພາບເດີມເຖິງຈະມີ Error ກໍຕາມ
-        if (actionBtns) actionBtns.style.display = 'flex';
-        if (headerTitle) headerTitle.innerText = originalTitle;
-        if (responsiveDiv) responsiveDiv.style.overflowX = originalOverflow;
-        tableCard.style.backgroundColor = originalCardBg;
 
-        originalStyles.forEach(item => {
-            item.el.style.color = item.color;
-            item.el.style.backgroundColor = item.backgroundColor;
+        // ແທນທີ່ສີເຫຼົ່ານັ້ນລົງໄປໃນ Inline Style ເພື່ອໃຫ້ html2canvas ເຫັນ 100%
+        allElements.forEach(el => {
+            const styles = originalStyles.get(el);
+            el.style.color = styles.compColor;
+            if (styles.compBg !== 'rgba(0, 0, 0, 0)' && styles.compBg !== 'transparent') {
+                el.style.backgroundColor = styles.compBg;
+            }
+            el.style.borderColor = styles.compBorder;
+            // ບັງຄັບ Font
+            el.style.fontFamily = "'Noto Sans Lao', sans-serif"; 
         });
-        
-        hideLoading();
-        alert("ເກີດຂໍ້ຜິດພາດໃນການສ້າງ PDF: " + err.message);
-    });
+
+        // ບັງຄັບສີພື້ນຫຼັງ Card ເປັນສີດຳ
+        const origCardStyle = { bg: tableCard.style.backgroundColor, color: tableCard.style.color };
+        tableCard.style.backgroundColor = '#111827';
+        tableCard.style.color = '#ffffff';
+        tableCard.style.fontFamily = "'Noto Sans Lao', sans-serif";
+
+        // ຕັ້ງຄ່າ html2pdf
+        const opt = { 
+            margin:       [0.3, 0.3, 0.3, 0.3],
+            filename:     `${pdfTitle.replace(/\s+/g, '_')}_${today}.pdf`,
+            image:        { type: 'jpeg', quality: 1.0 },
+            html2canvas:  { scale: 2, useCORS: true, backgroundColor: '#111827', windowWidth: 1400, logging: false }, 
+            jsPDF:        { unit: 'in', format: 'a3', orientation: 'landscape' }
+        };
+
+        // ສັ່ງໃຫ້ html2pdf ສ້າງ ແລະ ດາວໂຫຼດໂດຍກົງ
+        html2pdf().set(opt).from(tableCard).save().then(() => {
+            
+            // 🔄 ກູ້ຄືນສະພາບໜ້າຈໍທຸກຢ່າງໃຫ້ກັບມາເປັນປົກກະຕິ ຫຼັງຈາກໂຫຼດສຳເລັດ
+            if (actionBtns) actionBtns.style.display = originalActionDisplay;
+            if (headerTitle) headerTitle.innerText = originalTitle;
+            if (responsiveDiv) responsiveDiv.style.overflowX = originalOverflow;
+            
+            tableCard.style.backgroundColor = origCardStyle.bg;
+            tableCard.style.color = origCardStyle.color;
+
+            allElements.forEach(el => {
+                const styles = originalStyles.get(el);
+                el.style.color = styles.color;
+                el.style.backgroundColor = styles.backgroundColor;
+                el.style.borderColor = styles.borderColor;
+                el.style.fontFamily = styles.fontFamily;
+            });
+            
+            hideLoading();
+        }).catch(err => {
+            console.error(err);
+            // ກູ້ຄືນສະພາບເດີມເຖິງຈະມີ Error
+            if (actionBtns) actionBtns.style.display = originalActionDisplay;
+            if (headerTitle) headerTitle.innerText = originalTitle;
+            if (responsiveDiv) responsiveDiv.style.overflowX = originalOverflow;
+            
+            tableCard.style.backgroundColor = origCardStyle.bg;
+            tableCard.style.color = origCardStyle.color;
+
+            allElements.forEach(el => {
+                const styles = originalStyles.get(el);
+                el.style.color = styles.color;
+                el.style.backgroundColor = styles.backgroundColor;
+                el.style.borderColor = styles.borderColor;
+                el.style.fontFamily = styles.fontFamily;
+            });
+            
+            hideLoading();
+            alert("ເກີດຂໍ້ຜິດພາດໃນການສ້າງ PDF: " + err.message);
+        });
+
+    }, 200); 
 }
 
 function exportToExcel() {
