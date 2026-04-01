@@ -605,87 +605,92 @@ async function deleteDataByDate() {
 }
 
 function exportToPDF() {
-    const originalTable = document.getElementById('branch-table');
-    if (!originalTable) return alert("ບໍ່ພົບຂໍ້ມູນທີ່ຈະດາວໂຫຼດ!");
-    
+    const tableEl = document.getElementById('branch-table');
+    if (!tableEl) return alert("ບໍ່ພົບຂໍ້ມູນທີ່ຈະດາວໂຫຼດ!");
+
     showLoading('ກຳລັງສ້າງໄຟລ໌ PDF...');
-    
+
     const today = new Date().toISOString().slice(0, 10);
     let pdfTitle = "ລາຍງານ";
     if (currentActivePage === 'PUPOM') pdfTitle += " ປູພົມ";
     else if (currentActivePage === 'BEERLAO') pdfTitle += " ເບຍລາວ";
     else if (currentActivePage === 'CAMPAIGN') pdfTitle += " ລູກຄ້າແຄມແປນ";
 
-    // 1. ສ້າງ Container ຂຶ້ນມາໃໝ່ເພື່ອຫຼີກລ່ຽງ CSS ຂອງໜ້າຈໍຫຼັກມາກວນ
-    const container = document.createElement('div');
-    container.style.position = 'absolute';
-    container.style.top = '0';
-    container.style.left = '0';
-    container.style.zIndex = '-9999'; // ໃຫ້ຢູ່ຫຼັງສຸດເພື່ອບໍ່ໃຫ້ລົບກວນໜ້າຈໍ
-    container.style.width = '1400px'; // ບັງຄັບຄວາມກວ້າງບໍ່ໃຫ້ຂໍ້ຄວາມຕົກແຖວ
-    container.style.backgroundColor = '#0b1120'; // ພື້ນຫຼັງສີດຳ
-    container.style.padding = '40px';
-    container.style.color = '#ffffff';
-    container.style.fontFamily = '"Noto Sans Lao", sans-serif';
+    // 1. ສ້າງ Iframe ທີ່ຖືກເຊື່ອງໄວ້ (ເພື່ອບໍ່ໃຫ້ມີ Popup ເດັ້ງຂຶ້ນມາໂຊ)
+    const iframe = document.createElement('iframe');
+    iframe.style.position = 'absolute';
+    iframe.style.width = '0px';
+    iframe.style.height = '0px';
+    iframe.style.border = 'none';
+    document.body.appendChild(iframe);
 
-    // 2. ຫົວຂໍ້
-    const titleEl = document.createElement('h2');
-    titleEl.innerText = `ລາຍລະອຽດຂໍ້ມູນ ${pdfTitle} (ວັນທີ: ${today})`;
-    titleEl.style.textAlign = 'center';
-    titleEl.style.marginBottom = '20px';
-    titleEl.style.color = '#3b82f6';
-    container.appendChild(titleEl);
+    const iframeDoc = iframe.contentWindow.document;
 
-    // 3. ກັອບປີ້ຕາຕະລາງ
-    const tableClone = originalTable.cloneNode(true);
-    tableClone.style.width = '100%';
-    tableClone.style.borderCollapse = 'collapse';
-    
-    // ບັງຄັບໃສ່ສີ Inline Styles ໃຫ້ທຸກໆຖັນ (ປ້ອງກັນ html2canvas ອ່ານສີຜິດ)
-    const ths = tableClone.querySelectorAll('th');
-    ths.forEach(th => {
-        th.style.backgroundColor = '#1f2937';
-        th.style.borderBottom = '1px solid #374151';
-        th.style.padding = '12px';
-    });
+    // 2. ຂຽນໂຄດ HTML ພ້ອມ CSS ເຂົ້າໄປໃນ Iframe ໂດຍ Load Font ມາຈາກ Google Fonts
+    iframeDoc.write(`
+        <html>
+        <head>
+            <title>${pdfTitle}_${today}</title>
+            <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Lao:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+            <style>
+                body { 
+                    font-family: 'Noto Sans Lao', sans-serif !important; 
+                    background-color: #0b1120; 
+                    color: #ffffff; 
+                    padding: 20px; 
+                    -webkit-print-color-adjust: exact !important; 
+                    print-color-adjust: exact !important;
+                }
+                h2 { 
+                    text-align: center; 
+                    color: #3b82f6; 
+                    margin-bottom: 20px; 
+                }
+                table { 
+                    width: 100%; 
+                    border-collapse: collapse; 
+                    margin: 0 auto; 
+                }
+                th { 
+                    background-color: #1f2937; 
+                    color: #fbbf24 !important; 
+                    border: 1px solid #374151; 
+                    padding: 12px; 
+                }
+                td { 
+                    border: 1px solid #374151; 
+                    padding: 12px; 
+                    color: #ffffff !important; 
+                }
+                @media print {
+                    @page { size: landscape; margin: 10mm; }
+                    body { 
+                        -webkit-print-color-adjust: exact !important; 
+                        print-color-adjust: exact !important; 
+                    }
+                }
+            </style>
+        </head>
+        <body>
+            <h2>ລາຍລະອຽດຂໍ້ມູນ ${pdfTitle} (ວັນທີ: ${today})</h2>
+            ${tableEl.outerHTML}
+        </body>
+        </html>
+    `);
+    iframeDoc.close();
 
-    const tds = tableClone.querySelectorAll('td');
-    tds.forEach(td => {
-        td.style.borderBottom = '1px solid #374151';
-        td.style.padding = '12px';
-        if(td.style.color === '') td.style.color = '#ffffff'; // ຖ້າບໍ່ມີສີບັງຄັບໃຫ້ເປັນຂາວ
-    });
-
-    container.appendChild(tableClone);
-    document.body.appendChild(container); // ແປະໃສ່ DOM ເພື່ອໃຫ້ html2pdf ເຫັນ
-
-    const opt = { 
-        margin:       0.3,
-        filename:     `${pdfTitle.replace(/\s+/g, '_')}_${today}.pdf`,
-        image:        { type: 'jpeg', quality: 1.0 },
-        html2canvas:  { scale: 2, useCORS: true, backgroundColor: '#0b1120', windowWidth: 1400 }, 
-        jsPDF:        { unit: 'in', format: 'a3', orientation: 'landscape' }
-    };
-
-    // 4. ສ້າງ PDF ແລ້ວໂຫຼດ
-    html2pdf().set(opt).from(container).output('blob').then(function(pdfBlob) {
-        const blobUrl = URL.createObjectURL(pdfBlob);
-        const downloadLink = document.createElement('a');
-        downloadLink.href = blobUrl;
-        downloadLink.download = opt.filename;
-        document.body.appendChild(downloadLink);
-        downloadLink.click();
-        document.body.removeChild(downloadLink);
-        URL.revokeObjectURL(blobUrl);
+    // 3. ລໍຖ້າໃຫ້ Font ໂຫຼດສຳເລັດ ແລ້ວຈຶ່ງສັ່ງ Print ແບບງຽບໆພາຍໃນ Iframe
+    setTimeout(() => {
+        iframe.contentWindow.focus();
+        iframe.contentWindow.print();
         
-        document.body.removeChild(container); // ລຶບຖິ້ມຫຼັງຈາກໂຫຼດແລ້ວ
-        hideLoading();
-    }).catch(err => {
-        console.error(err);
-        document.body.removeChild(container);
-        hideLoading();
-        alert("ເກີດຂໍ້ຜິດພາດໃນການສ້າງ PDF: " + err.message);
-    });
+        // ເມື່ອ Print ສຳເລັດແລ້ວ ໃຫ້ລຶບ Iframe ຖິ້ມ ເພື່ອບໍ່ໃຫ້ໜັກເຄື່ອງ
+        setTimeout(() => {
+            document.body.removeChild(iframe);
+            hideLoading();
+        }, 1000); 
+
+    }, 1500); // ປະໄວ້ 1.5 ວິນາທີ ເພື່ອຮັບປະກັນວ່າ Google Fonts ຖືກໂຫຼດແລ້ວ
 }
 
 function exportToExcel() {
