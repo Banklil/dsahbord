@@ -425,10 +425,34 @@ function renderCharts(uniqueData, filteredData) {
 
     // --- 2. Donut Chart (Number in Center) ---
     let activeCount = 0, inactiveCount = 0, zeroCount = 0;
+    
     uniqueData.forEach(d => {
-        const open = Number(d.opening_balance) || 0; const close = Number(d.closing_balance) || 0;
-        if (close <= 0) zeroCount++; else if (open !== close) activeCount++; else inactiveCount++;
+        const close = Number(d.closing_balance) || 0; 
+        
+        if (close <= 0) {
+            zeroCount++;
+        } else {
+            // ດຶງປະຫວັດບັນຊີນີ້ ສະເພາະໃນຊ່ວງທີ່ Filter (filteredData)
+            const history = filteredData.filter(r => r.ascount_no === d.ascount_no);
+            history.sort((a, b) => a.date_key.localeCompare(b.date_key)); // ລຽງຈາກເກົ່າໄປໃໝ່
+            
+            if (history.length > 1) {
+                // ທຽບຍອດປິດຫຼ້າສຸດ ກັບ ຍອດທຳອິດໃນຊ່ວງເວລາທີ່ເລືອກ
+                const startClose = Number(history[0].closing_balance) || 0;
+                if (Math.abs(close - startClose) < 0.01) inactiveCount++;
+                else activeCount++;
+            } else {
+                // ຖ້າມີພຽງການອັບໂຫຼດດຽວໃນຊ່ວງເວລານີ້
+                const open = Number(d.opening_balance) || 0;
+                if (open > 0 && Math.abs(open - close) < 0.01) {
+                    inactiveCount++; // ມີຍອດເປີດມາພ້ອມ ແຕ່ຍອດປິດທໍ່ເດີມ
+                } else {
+                    activeCount++; // ເຄື່ອນໄຫວ
+                }
+            }
+        }
     });
+
     const totalAccounts = activeCount + inactiveCount + zeroCount;
 
     const donutData = [
@@ -502,13 +526,19 @@ async function confirmUpload() {
                 const custName = cleanRow['customername'] || cleanRow['name'] || row['ຊື່ລູກຄ້າ'] || '';
 
                 let openVal = 0; let closeVal = 0;
-                const hasOpenCol = 'openingbalance' in cleanRow || 'ຍອດເປີດ' in cleanRow; const hasCloseCol = 'closingbalance' in cleanRow || 'ຍອດປິດ' in cleanRow;
+                
+                // ກວດຈັບຄໍລຳທັງພາສາລາວ ແລະ ອັງກິດໃຫ້ຄອບຄຸມຫຼາຍຂຶ້ນ
+                const hasOpenCol = ['openingbalance', 'ຍອດເປີດ', 'ຍອດຍົກມາ', 'ຍົກມາ', 'openbalance'].some(k => k in cleanRow);
+                const hasCloseCol = ['closingbalance', 'ຍອດປິດ', 'ຍອດຄົງເຫຼືອ', 'ຍອດເງິນ', 'closebalance'].some(k => k in cleanRow);
 
-                if (hasOpenCol || hasCloseCol) { openVal = parseFloat(String(cleanRow['openingbalance'] || cleanRow['ຍອດເປີດ'] || '0').replace(/,/g, '')) || 0; closeVal = parseFloat(String(cleanRow['closingbalance'] || cleanRow['ຍອດປິດ'] || '0').replace(/,/g, '')) || 0; } 
+                if (hasOpenCol || hasCloseCol) { 
+                    openVal = parseFloat(String(cleanRow['openingbalance'] || cleanRow['ຍອດເປີດ'] || cleanRow['ຍອດຍົກມາ'] || cleanRow['ຍົກມາ'] || '0').replace(/,/g, '')) || 0; 
+                    closeVal = parseFloat(String(cleanRow['closingbalance'] || cleanRow['ຍອດປິດ'] || cleanRow['ຍອດຄົງເຫຼືອ'] || cleanRow['ຍອດເງິນ'] || '0').replace(/,/g, '')) || 0; 
+                } 
                 else {
                     let rawAmount = String(cleanRow['balance'] || cleanRow['amount'] || cleanRow['total'] || cleanRow['ຍອດເງິນ'] || cleanRow['ຈຳນວນເງິນ'] || cleanRow['ຍອດຄົງເຫຼືອ'] || '0').replace(/,/g, '');
                     const amountVal = parseFloat(rawAmount) || 0;
-                    if (uploadType === 'NEW') { openVal = amountVal; closeVal = 0; } else { openVal = 0; closeVal = amountVal; }
+                    if (uploadType === 'NEW') { openVal = amountVal; closeVal = amountVal; } else { openVal = 0; closeVal = amountVal; }
                 }
 
                 const uKey = `${accNo}_${dateKey}_${currentActivePage}`;
