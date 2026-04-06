@@ -197,12 +197,44 @@ input[type="text"], input[type="password"], input[type="email"], input[type="num
 }
 input:focus, select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-light); }
 input:disabled, select:disabled { opacity: 0.5; cursor: not-allowed; background: var(--bg-surface-hover); }
-input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(0.8); cursor: pointer; }
+
+/* ==========================================
+   ບັງຄັບຊ່ອງວັນທີໃຫ້ຄືກັບຊ່ອງເລືອກສາຂາ 100%
+   ========================================== */
+input[type="date"], 
+#start-date, 
+#end-date,
+#upload-date-select {
+    background-color: var(--bg-body) !important;
+    color: var(--text-main) !important;
+    color-scheme: dark !important; 
+    border: 1px solid var(--border-strong) !important;
+    border-radius: var(--radius-md) !important;
+    height: 44px !important;
+    padding: 0 16px !important;
+}
+
+/* ປ່ຽນສີໄອຄອນຮູບປະຕິທິນໃຫ້ງາມຂຶ້ນ */
+input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: none !important; 
+    opacity: 0.6;
+    cursor: pointer !important;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator:hover {
+    opacity: 1;
+}
 
 /* Filters */
 .filter-wrapper { display: flex; flex-wrap: wrap; gap: 15px; align-items: flex-end; margin-bottom: 20px;}
-.filter-group { display: flex; flex-direction: column; gap: 6px; flex: 1; min-width: 200px; }
+.filter-group { display: flex; flex-direction: column; gap: 6px; flex: 1; min-width: 150px; }
 .filter-group label { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; }
+
+/* ບັງຄັບໃຫ້ທຸກຊ່ອງ (ສາຂາ, ເລີ່ມວັນທີ, ຫາວັນທີ) ມີຂະໜາດເທົ່າກັນເປະ */
+.filter-wrapper .filter-group {
+    flex: 1 !important;
+    min-width: 150px !important;
+}
 
 /* Dropdown */
 .dropdown { position: relative; display: inline-block; }
